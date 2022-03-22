@@ -12,54 +12,82 @@ from google_tables import SheetsClient
 
 if __name__ == '__main__':
 
-    # Example of creating functions called by state constructor. 
-    
-    def get_possible_product_types():
-        return ["Type1", "Type2", "Type3"]
-
-
-    def get_possible_product_types_keyboard_buttons(scope, user):
-        return [MessageKeyboardButton(prod_type) for prod_type in get_possible_product_types()]
-
-
-    def get_possible_product_articles_keyboard_buttons(scope, user):
-        chosen_product = user.get_variable("process_product_type")
-        possible_articles = ["Article1", "Article2"]
-        return [MessageKeyboardButton(article) for article in possible_articles]
-
-
-    def get_possible_operations_keyboard_buttons(scope, user):
-        chosen_product = user.get_variable("process_product_type")
-        possible_operations = ["Operation1", "Operation2"]
-        return [MessageKeyboardButton(operation) for operation in possible_operations]
-
-
-    def save_process(scope, user, input_string):
-        user_name = user.get_variable("name")
-        process_start_time = user.get_variable("process_start_time")
-        process_product_type = user.get_variable("process_product_type")
-        process_product_article = user.get_variable("process_product_article")
-        process_operation = user.get_variable("process_operation")
-        process_operations_count = user.get_variable("process_operations_count")
-
-
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
     logging.info("Program started")
 
     # Example of using state constructor to create a bot. 
 
     scope = Scope([
-        Stage(name = "NewUser",
-              user_input_actions=[ActionChangeStage("AskingForName")]),
-
-        Stage(name="AskingForName",
-              message=SimpleTextMessage("Введите ваше имя"),
-              user_input_actions=[ActionChangeUserVariableToInput("name"),
-                                  ActionChangeStage("MainMenu")]),
-
-        Stage(name="MainMenu",
+        Stage(name="NewUser",
               message=Message(
-                  text=MessageText("Выберите опцию"),
+                  text=MessageText(
+                      "Привет! Я бот из компании Symbol, моя работа - помогать людям выбирать классные подарки. \n Кому вы ищете подарок?"),
+                  keyboard=MessageKeyboard(
+                      buttons=[
+                          MessageKeyboardButton(
+                              text="Ребенку",
+                              actions=[ActionChangeUserVariable("age", "kid")]),
+                          MessageKeyboardButton(
+                              text="Подростку",
+                              actions=[ActionChangeUserVariable("age", "teenager")]),
+                          MessageKeyboardButton(
+                              text="Взрослому",
+                              actions=[ActionChangeUserVariable("age", "adult")])
+                      ],
+                      is_non_keyboard_input_allowed=False)),
+              user_input_actions=[ActionChangeStage("AskingForSex")]),
+
+        Stage(name="AskingForSex",
+              message=Message(
+                  text=MessageText("Выберите пол"),
+                  keyboard=MessageKeyboard(
+                      buttons=[
+                          MessageKeyboardButton(
+                              text=lambda scope, user: "Мужчине" if user.get_variable("age") == "adult" else "Мальчику",
+                              actions=[ActionChangeUserVariable("sex", "boy"),
+                                       lambda scope, user: ActionChangeStage("AskingForMoney") if user.get_variable(
+                                           "age") == "teenager" else None]),
+                          MessageKeyboardButton(
+                              text=lambda scope, user: "Женщине" if user.get_variable("age") == "adult" else "Девочке",
+                              actions=[ActionChangeUserVariable("sex", "girl")])
+                      ],
+                      is_non_keyboard_input_allowed=False)),
+              user_input_actions=[ActionChangeStage("AskingForAdditionalInfo")]),
+
+        Stage(name="AskingForAdditionalInfo",
+              message=Message(
+                  text=lambda scope, user: MessageText("Выберите возраст") if user.get_variable("age") == "kid" else MessageText("Кому вы хотите сделать подарок?"),
+                  keyboard=MessageKeyboard(
+                      buttons=lambda scope, user:
+                          [
+                              MessageKeyboardButton(
+                                  text="4-7 лет",
+                                  actions=[ActionChangeUserVariable("age2", "4-7")]),
+                              MessageKeyboardButton(
+                                  text="8-12 лет",
+                                  actions=[ActionChangeUserVariable("age2", "8-12")])
+                          ]
+                          if user.get_variable("age") == "kid" else
+                          [
+                              MessageKeyboardButton(
+                                  text="Любимому человеку",
+                                  actions=[ActionChangeUserVariable("reciever", "lover")]),
+                              MessageKeyboardButton(
+                                  text="Другу, родственнику",
+                                  actions=[ActionChangeUserVariable("reciever", "friend")]),
+                              MessageKeyboardButton(
+                                  text="Коллеге, руководителю",
+                                  actions=[ActionChangeUserVariable("reciever", "colleague")]),
+                              MessageKeyboardButton(
+                                  text="Себе",
+                                  actions=[ActionChangeUserVariable("reciever", "self")])
+                          ],
+                      is_non_keyboard_input_allowed=False)),
+              user_input_actions=[ActionChangeStage("AskingForMoney")]),
+
+        Stage(name="AskingForMoney",
+              message=Message(
+                  text=MessageText("Деньги"),
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(
@@ -68,42 +96,12 @@ if __name__ == '__main__':
                                        ActionChangeStage("Process_AskingForProductType")])
                       ],
                       is_non_keyboard_input_allowed=False))),
-
-        Stage(name="Process_AskingForProductType",
-              message=Message(
-                  text=MessageText("Выберите тип продукции"),
-                  keyboard=MessageKeyboard(buttons=get_possible_product_types_keyboard_buttons,
-                                           is_non_keyboard_input_allowed=False)),
-              user_input_actions=[ActionChangeUserVariableToInput("process_product_type"),
-                                  ActionChangeStage("Process_AskingForProductArticle")]),
-
-        Stage(name="Process_AskingForProductArticle",
-              message=Message(text=MessageText("Выберите артикул"),
-                              keyboard=MessageKeyboard(buttons=get_possible_product_articles_keyboard_buttons,
-                                                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=[ActionChangeUserVariableToInput("process_product_article"),
-                                  ActionChangeStage("Process_AskingForOperation")]),
-
-        Stage(name="Process_AskingForOperation",
-              message=Message(text=MessageText("Выберите вид операции"),
-                              keyboard=MessageKeyboard(buttons=get_possible_operations_keyboard_buttons,
-                                                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=[ActionChangeUserVariableToInput("process_operation"),
-                                  ActionChangeStage("Process_AskingForOperationsCount")]),
-
-        Stage(name="Process_AskingForOperationsCount",
-              message=SimpleTextMessage("После окончания процесса введите количество операций"),
-              user_input_actions=[ActionChangeUserVariableToInput("process_operations_count"),
-                                  Action(save_process),
-                                  ActionBackToMainStage()],
-              user_input_filter=IntNumberFilter(not_passed_reason_message="Введённое значение не является числом"))
     ], main_stage_name="MainMenu")
 
-    sheets = SheetsClient('1vDOQoN7a9Bk016txadTRvW74A0RcTr1WPikatIL3tVU')
-    sheets.get_all_goods()
+    #sheets = SheetsClient('1vDOQoN7a9Bk016txadTRvW74A0RcTr1WPikatIL3tVU')
+    #sheets.get_all_goods()
 
-    token = "YOUR_TELEGRAM_TOKEN_HERE"
+    #token = "YOUR_TELEGRAM_TOKEN_HERE"
 
-    #Bot(token, scope).start_polling(poll_interval=2,
-    #                                poll_timeout=1)
-    #
+    Bot(token, scope).start_polling(poll_interval=2,
+                                    poll_timeout=1)

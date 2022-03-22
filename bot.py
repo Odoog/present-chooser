@@ -2,7 +2,7 @@ import logging
 from typing import AnyStr
 
 from telegram.ext import MessageHandler, Filters, Updater
-from telegram.replykeyboardmarkup import ReplyKeyboardMarkup
+from telegram.replykeyboardmarkup import ReplyKeyboardMarkup, InlineKeyboardMarkup
 
 from global_transferable_entities.scope import Scope
 from global_transferable_entities.user import User
@@ -25,8 +25,8 @@ class Bot:
         logging.info("Bot dispatched")
 
     def start_polling(self,
-                      poll_interval = 5,
-                      poll_timeout = 3):
+                      poll_interval=5,
+                      poll_timeout=3):
         self._updater.start_polling(poll_interval=poll_interval,
                                     timeout=poll_timeout)
         logging.info('Bot polling started')

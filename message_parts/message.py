@@ -20,7 +20,7 @@ class MessagePicture:
                  picture_file_disk_source: Optional[AnyStr] = None,
                  picture_file_telegram_id: Optional[AnyStr] = None):
         if picture_file_disk_source is None and picture_file_telegram_id is None:
-                raise ValueError('File disk source and file telegram id cannot both be none')
+            raise ValueError('File disk source and file telegram id cannot both be none')
         self.picture_file_disk_source = picture_file_disk_source
         self.picture_file_telegram_id = picture_file_telegram_id
 
@@ -28,7 +28,12 @@ class MessagePicture:
 class MessageKeyboardButton:
     def __init__(self,
                  text: AnyStr | Choice[AnyStr] | Callable[..., AnyStr] | Callable[..., Choice[AnyStr]],
-                 actions: 'Optional[List[Action]]' = None):
+                 actions: Union[
+                     List[Action | Callable[..., Action]],
+                     Choice[List[Action | Callable[..., Action]]],
+                     Callable[..., List[Action | Callable[..., Action]]],
+                     Callable[..., Choice[List[Action | Callable[..., Action]]]]
+                 ] = None):
         self._text = text
         self._actions = actions
 
@@ -41,8 +46,11 @@ class MessageKeyboardButton:
         else:
             return self._text(scope, user) if callable(self._text) else self._text
 
-    def get_actions(self) -> 'Optional[List[Action]]':
-        return self._actions if self._actions is not None else []
+    def get_actions(self) -> 'List[Action]':
+        actions = self._actions(scope, user) if callable(self._actions) else self._actions
+        actions = actions.get(scope, user) if isinstance(actions, Choice) else actions
+        actions = [action(scope, user) if callable(action) else action for action in actions]
+        return actions
 
 
 class MessageKeyboard:
@@ -54,9 +62,11 @@ class MessageKeyboard:
                      Callable[..., List[MessageKeyboardButton | Callable[..., MessageKeyboardButton]]],
                      Callable[..., Choice[List[MessageKeyboardButton | Callable[..., MessageKeyboardButton]]]]
                  ],
-                 is_non_keyboard_input_allowed: bool = False):
+                 is_non_keyboard_input_allowed: bool = False,
+                 is_inline_keyboard: bool = False):
         self._buttons = buttons
         self.is_non_keyboard_input_allowed = is_non_keyboard_input_allowed
+        self._is_inline_keyboard = is_inline_keyboard
 
     def get_buttons(self,
                     scope: 'Scope',

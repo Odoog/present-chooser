@@ -81,7 +81,8 @@ class Stage:
             for keyboard_button in keyboard_buttons:
                 if input_string == keyboard_button.get_text(scope, user):
                     for button_action in keyboard_button.get_actions():
-                        button_action.apply(scope, user, input_string)
+                        if action is not None:
+                            action.apply(scope, user, input_string)
         except AttributeError:
             pass
 
