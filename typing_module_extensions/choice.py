@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, TypeVar, Dict, Any, Generic, TYPE_CHECKING
+from typing import Callable, TypeVar, Dict, Any, Generic, TYPE_CHECKING, Type
 
 OptionalOutputClass = TypeVar('OptionalOutputClass')
 ConditionOutputClass = TypeVar('ConditionOutputClass')
@@ -16,7 +16,10 @@ class Choice(Generic[OptionalOutputClass]):
             scope: 'Scope',
             user: 'User') -> OptionalOutputClass:
         function_output = self.function(scope, user)
-        if function_output not in self.outputs:
+        if function_output not in self.outputs and "_" not in self.outputs:
             logging.error("Optional object with this function output is not specified")
         else:
-            return self.outputs[function_output]
+            try:
+                return self.outputs[function_output]
+            except Exception:
+                return self.outputs["_"]

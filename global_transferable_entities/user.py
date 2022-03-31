@@ -36,7 +36,17 @@ class User:
         self._user_variables[variable_name] = variable_value
         Database.change_user_column(self.chat_id, 'user_variables', self._user_variables)
 
+    def try_get_variable(self,
+                         variable_name: AnyStr):
+        try:
+            return self.get_variable(variable_name)
+        except Exception:
+            return None
+
     def get_variable(self,
                      variable_name: str):
         self.update_info()
         return self._user_variables[variable_name]
+
+    def delete(self):
+        Database.delete_user(self.chat_id)

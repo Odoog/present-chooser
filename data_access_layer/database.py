@@ -38,7 +38,7 @@ class Database:
             else:
                 answer = Database._cur.execute(query).fetchall()
 
-            if need_save or query.find('update') != -1 or query.find('insert') != -1:
+            if need_save or query.find('update') != -1 or query.find('insert') != -1 or query.find('delete') != -1:
                 Database._con.commit()
 
             logging.info('DB answer rows count: '.format(len(answer)))
@@ -79,6 +79,10 @@ class Database:
             return user_from_db_dict
         else:
             return {}
+        
+    @staticmethod
+    def delete_user(chat_id: str):
+        Database._run("delete from users where chat_id = ?", (chat_id,))
 
     @staticmethod
     def change_user_column(chat_id: str, column_name: str, column_value: object):

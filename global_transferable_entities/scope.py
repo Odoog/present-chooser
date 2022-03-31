@@ -34,6 +34,13 @@ class Scope:
         self.update_info()
         return self._global_variables[variable_name]
 
+    def try_get_variable(self,
+                         variable_name: AnyStr):
+        try:
+            return self.get_variable(variable_name)
+        except Exception:
+            return None
+
     def get_stage(self,
                   stage_name: AnyStr) -> 'Optional[Stage]':
         for stage in self._stages:

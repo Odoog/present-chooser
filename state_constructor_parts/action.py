@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, AnyStr, Optional, TYPE_CHECKING
+from typing import Callable, AnyStr, Optional, TYPE_CHECKING, Any
 
 
 class Action:
@@ -34,9 +34,9 @@ class ActionChangeStage(Action):
 class ActionChangeUserVariable(Action):
     def __init__(self,
                  variable_name: AnyStr,
-                 variable_value: AnyStr | Callable[..., AnyStr]):
+                 variable_value: Any):
         if callable(variable_value):
-            super().__init__(lambda scope, user, input_string: user.change_variable(variable_name, variable_value()))
+            super().__init__(lambda scope, user, input_string: user.change_variable(variable_name, variable_value(scope, user)))
         else:
             super().__init__(lambda scope, user, input_string: user.change_variable(variable_name, variable_value))
 

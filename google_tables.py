@@ -1,4 +1,7 @@
+import json
 import logging
+from datetime import datetime, timedelta
+
 from models.good import Good
 import pygsheets
 
@@ -8,112 +11,69 @@ class SheetsClient:
     def __init__(self, table_key):
         self.client = pygsheets.authorize(service_file='account_credentials.json')
         self.sheet = self.client.open_by_key(table_key)
-        self.db_sheet = self.sheet.worksheet_by_title('База товаров (чек боксы)')
+        self.db_sheet = self.sheet.worksheet_by_title('База товаров')
+        self.attributes_sheet = self.sheet.worksheet_by_title('Атрибуты')
+        self.goods = []
+        self.last_time_update = datetime.min
+        self.last_time_update_cat = datetime.min
+        self.goods_table_changes = []
+        self.goods_table_changes_count = 0
+        self.goods_category_rating = {}
+        self.goods_category_rating_changes = {}
+        self.goods_category_rating_changes_count = 0
 
     def get_all_goods(self):
-        values = self.db_sheet.get_all_values(returnas='matrix')
-        for key, row in enumerate(values[1:]):
-            good = Good(row[0], row[1], row[2], row[3], row[4], row[5])
-            current_prices = good.get_current_prices()
-            if current_prices is not None:
-                for price_key, price in enumerate(current_prices):
-                    self.db_sheet.update_value((key + 2, 31 + price_key), price)
+        if datetime.now() - self.last_time_update > timedelta(hours=1):
+            self.last_time_update = datetime.now()
+            self.goods = []
+            values = self.db_sheet.get_all_values(returnas='matrix')
+            for key, row in enumerate(values[1:]):
+                if row[0] == "" or row[0] is None:
+                    break
+                good = Good(key + 1, *row[0:18])
+                #current_prices = good.get_current_prices()
+                #if current_prices is not None:
+                #    for price_key, price in enumerate(current_prices):
+                #        self.db_sheet.update_value((key + 2, 31 + price_key), price)
+                self.goods.append(good)
+        return self.goods
 
-    def add_operation(self,
-                      date,
-                      worker_id,
-                      worker_full_name,
-                      product,
-                      article,
-                      operation,
-                      operation_count,
-                      defect_count,
-                      defect_types,
-                      operation_price,
-                      start_time,
-                      hold_time,
-                      end_time,
-                      oper_target,
-                      work_time):
-        self.template_sheet.insert_rows(row=self.find_last_free_row_id_in_operations_sheet() - 1,
-                                        number=1,
-                                        values=[[
-                                            date,
-                                            worker_id,
-                                            worker_full_name,
-                                            product,
-                                            article,
-                                            operation,
-                                            operation_count,
-                                            defect_count,
-                                            defect_types,
-                                            operation_price,
-                                            '=G{}*J{}'.format(self.find_last_free_row_id_in_operations_sheet(),
-                                                              self.find_last_free_row_id_in_operations_sheet()),
-                                            start_time,
-                                            hold_time,
-                                            end_time,
-                                            int(work_time),
-                                            int(work_time) / int(oper_target),
-                                            '=G{}-P{}'.format(self.find_last_free_row_id_in_operations_sheet(),
-                                                              self.find_last_free_row_id_in_operations_sheet())
-                                        ]])
+    def get_goods_category_rating(self):
+        if datetime.now() - self.last_time_update_cat > timedelta(hours=1):
+            self.last_time_update = datetime.now()
+            self.goods_category_rating = {}
+            values = self.attributes_sheet.get_all_values(returnas='matrix')
+            cat_names = values[19]
+            cat_rating = values[20]
+            for key, cat_name in enumerate(cat_names):
+                self.goods_category_rating[cat_name] = int(cat_rating[key] if cat_rating[key] != "" else 0)
+        return self.goods_category_rating
 
-    def get_possible_products(self):
-        products_names = set()
-        values = self.operations_sheet.get_all_values(returnas='matrix')
-        for row in values[1:]:
-            if row[0] != "":
-                products_names.add(row[0])
-        return list(products_names)
+    def get_good_by_id(self, ind) -> Good:
+        goods = self.get_all_goods()
+        return goods[ind - 1]
 
-    def get_possible_operations_by_product(self, product_name):
-        operations_names = set()
-        values = self.operations_sheet.get_all_values(returnas='matrix')
-        for row in values[1:]:
-            if row[0] == product_name:
-                operations_names.add(row[1])
-        print(list(operations_names))
-        return list(operations_names)
+    def change_good_rating(self, scope, user, ind, iter_value):
+        if (goods_rating := scope.try_get_variable("goods_rating")) is None:
+            scope.change_variable("goods_rating", {})
+            goods_rating = {}
 
-    def get_operation_price(self, product_name, operation_name):
-        values = self.operations_sheet.get_all_values(returnas='matrix')
-        for row in values[1:]:
-            if row[0] == product_name and row[1] == operation_name:
-                return row[2]
-        return -1
+        if ind in goods_rating:
+            goods_rating[ind] += iter_value
+        else:
+            goods_rating[ind] = iter_value
 
-    def get_operation_target(self, product_name, operation_name):
-        values = self.operations_sheet.get_all_values(returnas='matrix')
-        for row in values[1:]:
-            if row[0] == product_name and row[1] == operation_name:
-                return row[3]
-        return -1
+        scope.change_variable("goods_rating", goods_rating)
 
-    def get_possible_articles_by_product(self, product_name):
-        articles = set()
-        logging.info('Getting all articles by product <{}>'.format(product_name))
-        values = self.articles_sheet.get_all_values(returnas='matrix')
+        category = self.get_good_by_id(ind).category
 
-        for row in values[1:]:
-            logging.info('For product with name <{}>'.format(row[0]))
-            if row[0] == product_name:
-                articles.add(row[1])
-                logging.info('Add article {}'.format(row[1]))
-        return list(articles)
+        if (categories_rating := scope.try_get_variable("categories_rating")) is None:
+            scope.change_variable("categories_rating", {})
+            categories_rating = {}
 
-    def get_possible_defects_by_product(self, product_name):
-        defects = set()
-        values = self.defects_sheet.get_all_values(returnas='matrix')
-        for row in values[1:]:
-            if row[0] == product_name:
-                defects.add(row[1])
-        return list(defects)
+        if category in categories_rating:
+            categories_rating[category] += iter_value
+        else:
+            categories_rating[category] = iter_value
 
-    def check_auth_code(self, auth_code):
-        values = self.codes_sheet.get_all_values(returnas='matrix')
-        for key, row in enumerate(values):
-            if row[0] == auth_code:
-                self.codes_sheet.delete_rows(key + 1)
-                return True
-        return False
+        scope.change_variable("categories_rating", categories_rating)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import logging
 from typing import List, AnyStr, Optional
 
@@ -64,7 +65,7 @@ class Stage:
             if keyboard := message.get_keyboard(scope, user):
                 if not keyboard.is_non_keyboard_input_allowed:
                     keyboard_buttons_strings = \
-                        [button.get_text(scope, user) for button in keyboard.get_buttons(scope, user)]
+                        [button.get_text(scope, user) for button in list(itertools.chain(*keyboard.get_buttons(scope, user)))]
                     if input_string not in keyboard_buttons_strings:
                         return False
         return True
@@ -77,10 +78,10 @@ class Stage:
             for user_input_action in user_input_actions:
                 user_input_action.apply(scope, user, input_string)
         try:
-            keyboard_buttons = self.get_message(scope, user).get_keyboard(scope, user).get_buttons(scope, user)
+            keyboard_buttons = list(itertools.chain(*self.get_message(scope, user).get_keyboard(scope, user).get_buttons(scope, user)))
             for keyboard_button in keyboard_buttons:
                 if input_string == keyboard_button.get_text(scope, user):
-                    for button_action in keyboard_button.get_actions():
+                    for action in keyboard_button.get_actions(scope, user):
                         if action is not None:
                             action.apply(scope, user, input_string)
         except AttributeError:
