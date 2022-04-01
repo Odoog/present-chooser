@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from datetime import datetime
 
 from telegram import ParseMode
@@ -20,6 +21,7 @@ from typing_module_extensions.choice import Choice
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
     logging.info("Program started")
+
 
     # Example of using state constructor to create a bot.
 
@@ -46,6 +48,7 @@ if __name__ == '__main__':
             "🇷🇺" if good.is_local_brand else "",
             good.shop,
             good.price_actual)
+
 
     scope = Scope([
         Stage(name="NewUser",
@@ -149,12 +152,9 @@ if __name__ == '__main__':
                               actions=[ActionChangeUserVariable("spend", "5000-8000 руб")]),
                           MessageKeyboardButton(
                               text="Больше 8000 рублей",
-                              actions=[ActionChangeUserVariable("spend", "> 8000 руб")]),
-                          MessageKeyboardButton(
-                              text="Закончить выбор",
-                              actions=[Action(lambda scope, user, input_text: ActionChangeStage("ReadyToShow") if user.try_get_variable("receiver") == "Себе" else ActionChangeStage("AskingForReason"))]),
+                              actions=[ActionChangeUserVariable("spend", "> 8000 руб")])
                       ],
-                      buttons_layout=[2, 2, 1, 1],
+                      buttons_layout=[2, 2, 1],
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=Choice(
                   lambda scope, user: user.try_get_variable("receiver"),
@@ -224,7 +224,8 @@ if __name__ == '__main__':
                           MessageKeyboardButton(
                               text="Нравится",
                               actions=[Action(lambda scope, user, input: sheets.change_good_rating(scope, user,
-                                  int(user.get_variable("good_id")), 1)),
+                                                                                                   int(user.get_variable(
+                                                                                                       "good_id")), 1)),
                                        ActionChangeUserVariable("fav_list", lambda scope, user: json.dumps(
                                            json.loads(user.get_variable("fav_list")) + [
                                                json.loads(user.get_variable("show_list"))[
@@ -232,7 +233,9 @@ if __name__ == '__main__':
                           MessageKeyboardButton(
                               text="Не подходит",
                               actions=[Action(lambda scope, user, input: sheets.change_good_rating(scope, user,
-                                  int(user.get_variable("good_id")), -1))]),
+                                                                                                   int(user.get_variable(
+                                                                                                       "good_id")),
+                                                                                                   -1))]),
                           MessageKeyboardButton(
                               text="Стоп",
                               actions=[ActionChangeStage("ShowingFinish")])
@@ -282,13 +285,9 @@ if __name__ == '__main__':
 
     ], main_stage_name="MainMenu")
 
-    token = ""
-
-    sheets = SheetsClient("")
-
+    sheets = SheetsClient(os.environ['sheets_token'])
     worker = Worker(sheets)
-
     worker.generate_goods_files()
 
-    Bot(token, scope).start_polling(poll_interval=2,
-                                    poll_timeout=1)
+    Bot(os.environ['telegram_token'], scope).start_polling(poll_interval=2,
+                                                           poll_timeout=1)
