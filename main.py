@@ -22,23 +22,22 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
     logging.info("Program started")
 
-
     # Example of using state constructor to create a bot.
 
     def get_all_relevant_goods(scope, user):
         all_goods = sheets.get_all_goods()
-        all_goods = list(filter(lambda good: user.get_variable("age") in good.age or good.is_universal, all_goods))
-        all_goods = list(filter(lambda good: user.get_variable("sex") in good.sex or good.is_universal, all_goods))
-        all_goods = list(filter(lambda good: user.get_variable("spend") == good.price or good.is_universal, all_goods))
+        all_goods = list(filter(lambda good: user.get_variable("age") in good.age or good.is_universal == "TRUE", all_goods))
+        all_goods = list(filter(lambda good: user.get_variable("sex") in good.sex or good.is_universal == "TRUE", all_goods))
+        # all_goods = list(filter(lambda good: user.get_variable("spend") == good.price or good.is_universal == "TRUE", all_goods))
         if user.get_variable("age") == "ребенку":
             all_goods = list(
-                filter(lambda good: user.get_variable("age2") in good.age2 or good.is_universal, all_goods))
+                filter(lambda good: user.get_variable("age2") in good.age2 or good.is_universal == "TRUE", all_goods))
         if user.get_variable("age") == "взрослому":
             all_goods = list(
-                filter(lambda good: user.get_variable("receiver") in good.receiver or good.is_universal, all_goods))
+                filter(lambda good: user.get_variable("receiver") in good.receiver or good.is_universal == "TRUE", all_goods))
         all_goods = list(
             filter(lambda good: user.try_get_variable("reason") in good.reason or
-                                good.is_universal_reason and user.try_get_variable("reason") == "Другой повод",
+                                good.is_universal_reason == "TRUE" and (user.try_get_variable("reason") == "Другой повод" or user.try_get_variable("reason") is None),
                    all_goods))
 
         return sorted(all_goods, key=lambda good: -good.rating)
@@ -143,17 +142,11 @@ if __name__ == '__main__':
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(
-                              text="До 1000 рублей",
-                              actions=[ActionChangeUserVariable("spend", "1000-3000 руб")]),
+                              text="До 3000 рублей",
+                              actions=[ActionChangeUserVariable("spend", "0-3000 руб")]),
                           MessageKeyboardButton(
-                              text="От 1000 до 3000 рублей",
-                              actions=[ActionChangeUserVariable("spend", "1000-3000 руб")]),
-                          MessageKeyboardButton(
-                              text="От 3000 до 5000 рублей",
-                              actions=[ActionChangeUserVariable("spend", "3000-5000 руб")]),
-                          MessageKeyboardButton(
-                              text="От 5000 до 8000 рублей",
-                              actions=[ActionChangeUserVariable("spend", "5000-8000 руб")]),
+                              text="От 3000 до 8000 рублей",
+                              actions=[ActionChangeUserVariable("spend", "3000-8000 руб")]),
                           MessageKeyboardButton(
                               text="Больше 8000 рублей",
                               actions=[ActionChangeUserVariable("spend", "> 8000 руб")])
