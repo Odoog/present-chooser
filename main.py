@@ -28,7 +28,7 @@ if __name__ == '__main__':
         all_goods = sheets.get_all_goods()
         all_goods = list(filter(lambda good: user.get_variable("age") in good.age or good.is_universal == "TRUE", all_goods))
         all_goods = list(filter(lambda good: user.get_variable("sex") in good.sex or good.is_universal == "TRUE", all_goods))
-        all_goods = list(filter(lambda good: int(user.get_variable("spend").split('-')[0]) <= int("".join(filter(str.isdigit, good.price_actual))) <= int(user.get_variable("spend").split('-')[1])))
+        all_goods = list(filter(lambda good: int(user.get_variable("spend").split('-')[0]) <= int("".join(filter(str.isdigit, good.price_actual))) <= int(user.get_variable("spend").split('-')[1]), all_goods))
         if user.get_variable("age") == "ребенку":
             all_goods = list(
                 filter(lambda good: user.get_variable("age2") in good.age2 or good.is_universal == "TRUE", all_goods))
@@ -195,21 +195,29 @@ if __name__ == '__main__':
 
         Stage(name="ReadyToShow",
               message=Message(
-                  text=MessageText("Отлично! У меня для вас много интересных варинтов - выбирайте :) \n\nЗапоминать "
-                                   "ничего не нужно, когда вы нажмете \"Стоп\", я покажу вам все подарки, который вам"
-                                   " понравились."),
+                  text=lambda scope, user: MessageText("Отлично! У меня для вас много интересных варинтов - выбирайте :) \n\nЗапоминать "
+                                                       "ничего не нужно, когда вы нажмете \"Стоп\", я покажу вам все подарки, который вам"
+                                                       " понравились.") if len(get_all_relevant_goods(scope, user)) > 0 else
+                                            MessageText("Подарков, подходящих под ваши критерии, пока нет :( "
+                                                        "\nПопробуйте изменить параметры — например, бюджет"),
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(text="Хорошо")
                       ],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=[ActionChangeStage("ShowingGood"),
-                                  ActionChangeUserVariable("good_id", "0"),
-                                  ActionChangeUserVariable("show_list", lambda scope, user: json.dumps(
-                                      [good.ind for good in get_all_relevant_goods(scope, user)])),
-                                  ActionChangeUserVariable("fav_list", "[]"),
-                                  ActionChangeUserVariable("showing_id", lambda scope, user:
-                                  json.loads(user.get_variable("show_list"))[int(user.get_variable("good_id"))])]),
+              user_input_actions=Choice(lambda scope, user: len(get_all_relevant_goods(scope, user)) > 0,
+                                        {
+                                            True: [
+                                                ActionChangeStage("ShowingGood"),
+                                                ActionChangeUserVariable("good_id", "0"),
+                                                ActionChangeUserVariable("show_list", lambda scope, user: json.dumps(
+                                                    [good.ind for good in get_all_relevant_goods(scope, user)])),
+                                                ActionChangeUserVariable("fav_list", "[]"),
+                                                ActionChangeUserVariable("showing_id", lambda scope, user:
+                                                    json.loads(user.get_variable("show_list"))[int(user.get_variable("good_id"))])
+                                            ],
+                                            False: [ActionChangeStage("Opening")]
+                                        })),
 
         Stage(name="ShowingGood",
               message=Message(
