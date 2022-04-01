@@ -21,13 +21,7 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
     logging.info("Program started")
 
-    # Example of using state constructor to create a bot. 
-    sheets = SheetsClient('1vDOQoN7a9Bk016txadTRvW74A0RcTr1WPikatIL3tVU')
-
-    worker = Worker(sheets)
-
-    worker.generate_goods_files()
-
+    # Example of using state constructor to create a bot.
 
     def get_all_relevant_goods(scope, user):
         all_goods = sheets.get_all_goods()
@@ -53,16 +47,13 @@ if __name__ == '__main__':
             good.shop,
             good.price_actual)
 
-
-    token = "5263313288:AAFz77PUseH5o4IfDMQyt6QMUDZFLxYnGK8"
-
     scope = Scope([
         Stage(name="NewUser",
               user_input_actions=[ActionChangeStage("Opening")]),
         Stage(name="Opening",
               message=Message(
                   text=MessageText(
-                      "Привет! Я бот из компании Symbol, моя работа - помогать людям выбирать классные подарки. \n "
+                      "Привет! Я бот из компании Symbol, моя работа - помогать людям выбирать классные подарки. \n\n"
                       "Кому вы ищете подарок?"),
                   keyboard=MessageKeyboard(
                       buttons=[
@@ -141,7 +132,7 @@ if __name__ == '__main__':
 
         Stage(name="AskingForMoney",
               message=Message(
-                  text=MessageText("Сколько готовы потратить"),
+                  text=MessageText("Сколько готовы потратить?"),
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(
@@ -207,7 +198,7 @@ if __name__ == '__main__':
 
         Stage(name="ReadyToShow",
               message=Message(
-                  text=MessageText("Отлично! У меня для вас много интересных варинтов - выбирайте :) \n\n Запоминать "
+                  text=MessageText("Отлично! У меня для вас много интересных варинтов - выбирайте :) \n\nЗапоминать "
                                    "ничего не нужно, когда вы нажмете \"Стоп\", я покажу вам все подарки, который вам"
                                    " понравились."),
                   keyboard=MessageKeyboard(
@@ -278,10 +269,9 @@ if __name__ == '__main__':
         Stage(name="ShowingFinish",
               message=Message(
                   text=lambda scope, user: MessageText((
-                      "Все подарки, которые вам понравились, собраны [здесь]({}). Если захотите упаковать подарок - мы готовы помочь и в этом, "
-                      "[ГОТОВЫ?]({}) :) Хорошего дня!").format(
+                      "Все подарки, которые вам понравились, собраны [здесь]({}) :) Хорошего дня!").format(
                       "http://77.87.212.229/present-chooser/build/" + worker.build_site(
-                          json.loads(user.get_variable("fav_list"))) + ".html", "https://google.com"),
+                          json.loads(user.get_variable("fav_list"))) + ".html"),
                       ParseMode.MARKDOWN),
                   keyboard=MessageKeyboard(
                       buttons=[
@@ -291,6 +281,14 @@ if __name__ == '__main__':
                       is_non_keyboard_input_allowed=False)))
 
     ], main_stage_name="MainMenu")
+
+    token = ""
+
+    sheets = SheetsClient("")
+
+    worker = Worker(sheets)
+
+    worker.generate_goods_files()
 
     Bot(token, scope).start_polling(poll_interval=2,
                                     poll_timeout=1)
