@@ -36,6 +36,10 @@ if __name__ == '__main__':
         if user.get_variable("age") == "взрослому":
             all_goods = list(
                 filter(lambda good: user.get_variable("receiver") in good.receiver or good.is_universal, all_goods))
+        all_goods = list(
+            filter(lambda good: user.try_get_variable("reason") in good.reason or
+                                good.is_universal_reason and user.try_get_variable("reason") == "Другой повод",
+                   all_goods))
 
         return sorted(all_goods, key=lambda good: -good.rating)
 
