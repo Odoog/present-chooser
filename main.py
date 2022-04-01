@@ -143,34 +143,34 @@ if __name__ == '__main__':
               message=Message(
                   text=MessageText("Сколько готовы потратить"),
                   keyboard=MessageKeyboard(
-                      buttons=lambda scope, user:
-                      [
-                          MessageKeyboardButton(text=button_text) for button_text in
-                          [money for money in ["До 1000 рублей",
-                                               "От 1000 до 3000 рублей",
-                                               "От 3000 до 5000 рублей",
-                                               "От 5000 до 8000 рублей",
-                                               "Больше 8000 рублей"]
-                           if money in
-                           {"До 1000 рублей",
-                            "От 1000 до 3000 рублей",
-                            "От 3000 до 5000 рублей",
-                            "От 5000 до 8000 рублей",
-                            "Больше 8000 рублей"}.difference(set(user.get_variable("spend")))]
-                      ] +
-                      [
+                      buttons=[
+                          MessageKeyboardButton(
+                              text="До 1000 рублей",
+                              actions=[ActionChangeUserVariable("spend", "1000-3000 руб")]),
+                          MessageKeyboardButton(
+                              text="От 1000 до 3000 рублей",
+                              actions=[ActionChangeUserVariable("spend", "1000-3000 руб")]),
+                          MessageKeyboardButton(
+                              text="От 3000 до 5000 рублей",
+                              actions=[ActionChangeUserVariable("spend", "3000-5000 руб")]),
+                          MessageKeyboardButton(
+                              text="От 5000 до 8000 рублей",
+                              actions=[ActionChangeUserVariable("spend", "5000-8000 руб")]),
+                          MessageKeyboardButton(
+                              text="Больше 8000 рублей",
+                              actions=[ActionChangeUserVariable("spend", "> 8000 руб")]),
                           MessageKeyboardButton(
                               text="Закончить выбор",
-                              actions=[Action(lambda scope, user, input_text: (
-                                  ActionChangeStage("ReadyToShow") if user.try_get_variable(
-                                      "receiver") == "Себе" else ActionChangeStage("AskingForReason")).apply(scope,
-                                                                                                             user,
-                                                                                                             input_text))])
+                              actions=[Action(lambda scope, user, input_text: ActionChangeStage("ReadyToShow") if user.try_get_variable("receiver") == "Себе" else ActionChangeStage("AskingForReason"))]),
                       ],
-                      buttons_layout=[1, 1, 1, 1, 1, 1, 1],
+                      buttons_layout=[2, 2, 1, 1],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=[Action(lambda scope, user, input_text: user.change_variable("spend", list(
-                  set(user.get_variable("spend") + [input_text]))))]),
+              user_input_actions=Choice(
+                  lambda scope, user: user.try_get_variable("receiver"),
+                  {
+                      "Себе": [ActionChangeStage("ReadyToShow")],
+                      "_": [ActionChangeStage("AskingForReason")],
+                  })),
 
         Stage(name="AskingForReason",
               message=Message(
@@ -233,8 +233,7 @@ if __name__ == '__main__':
                           MessageKeyboardButton(
                               text="Нравится",
                               actions=[Action(lambda scope, user, input: sheets.change_good_rating(scope, user,
-                                                                                                   int(user.get_variable(
-                                                                                                       "good_id")), 1)),
+                                  int(user.get_variable("good_id")), 1)),
                                        ActionChangeUserVariable("fav_list", lambda scope, user: json.dumps(
                                            json.loads(user.get_variable("fav_list")) + [
                                                json.loads(user.get_variable("show_list"))[
@@ -242,9 +241,7 @@ if __name__ == '__main__':
                           MessageKeyboardButton(
                               text="Не подходит",
                               actions=[Action(lambda scope, user, input: sheets.change_good_rating(scope, user,
-                                                                                                   int(user.get_variable(
-                                                                                                       "good_id")),
-                                                                                                   -1))]),
+                                  int(user.get_variable("good_id")), -1))]),
                           MessageKeyboardButton(
                               text="Стоп",
                               actions=[ActionChangeStage("ShowingFinish")])
