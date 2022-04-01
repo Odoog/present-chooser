@@ -255,17 +255,21 @@ if __name__ == '__main__':
                                                           int(user.get_variable("good_id"))])
                          ],
                          False: [
-                             ActionChangeStage("ShowingFinish")
+                             ActionChangeStage("ShowingLimit")
                          ]
                      })),
 
-        Stage(name="ShowingLimit",  # Необходимо?
+        Stage(name="ShowingLimit",
               message=Message(
-                  text=MessageText("Мы показали вам все возможные подарки!)"),
+                  text=lambda scope, user: MessageText((
+                      "Я показал всё, что смог подобрать для вас :) \n\nВсе подарки, которые вам понравились, собраны [здесь]({})").format(
+                      "http://77.87.212.229/present-chooser/build/" + worker.build_site(
+                          json.loads(user.get_variable("fav_list"))) + ".html"),
+                      ParseMode.MARKDOWN),
                   keyboard=MessageKeyboard(
                       buttons=[
-                          MessageKeyboardButton(text="Показать выбранные",
-                                                actions=[ActionChangeStage("ShowingFinish")])
+                          MessageKeyboardButton(text="Выбрать еще один подарок",
+                                                actions=[ActionChangeStage("Opening")])
                       ],
                       is_non_keyboard_input_allowed=False))),
 
