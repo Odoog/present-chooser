@@ -28,7 +28,7 @@ if __name__ == '__main__':
         all_goods = sheets.get_all_goods()
         all_goods = list(filter(lambda good: user.get_variable("age") in good.age or good.is_universal == "TRUE", all_goods))
         all_goods = list(filter(lambda good: user.get_variable("sex") in good.sex or good.is_universal == "TRUE", all_goods))
-        # all_goods = list(filter(lambda good: user.get_variable("spend") == good.price or good.is_universal == "TRUE", all_goods))
+        all_goods = list(filter(lambda good: int(user.get_variable("spend").split('-')[0]) <= int("".join(filter(str.isdigit, good.price_actual))) <= int(user.get_variable("spend").split('-')[1])))
         if user.get_variable("age") == "ребенку":
             all_goods = list(
                 filter(lambda good: user.get_variable("age2") in good.age2 or good.is_universal == "TRUE", all_goods))
@@ -143,13 +143,13 @@ if __name__ == '__main__':
                       buttons=[
                           MessageKeyboardButton(
                               text="До 3000 рублей",
-                              actions=[ActionChangeUserVariable("spend", "0-3000 руб")]),
+                              actions=[ActionChangeUserVariable("spend", "0-3000")]),
                           MessageKeyboardButton(
                               text="От 3000 до 8000 рублей",
-                              actions=[ActionChangeUserVariable("spend", "3000-8000 руб")]),
+                              actions=[ActionChangeUserVariable("spend", "3000-8000")]),
                           MessageKeyboardButton(
                               text="Больше 8000 рублей",
-                              actions=[ActionChangeUserVariable("spend", "> 8000 руб")])
+                              actions=[ActionChangeUserVariable("spend", "8000-999999")])
                       ],
                       buttons_layout=[2, 2, 1],
                       is_non_keyboard_input_allowed=False)),
