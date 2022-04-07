@@ -9,6 +9,7 @@ from global_transferable_entities.user import User
 from state_constructor_parts.action import Action
 from state_constructor_parts.filter import InputFilter
 from message_parts.message import Message
+from state_constructor_parts.stats import Stats
 from typing_module_extensions.choice import Choice
 
 
@@ -19,11 +20,13 @@ class Stage:
                  message: Optional[Message | Choice[Message]] = None,
                  user_input_actions: Optional[List[Action] | Choice[List[Action]]] = None,
                  user_input_filter: Optional[InputFilter | Choice[InputFilter]] = None,
-                 statistics: Optional[List[Statistic]] = None):
+                 statistics: Optional[List[Stats]] = None):
         self._name = name
         self._message = message
         self._user_input_actions = user_input_actions
         self._user_input_filter = user_input_filter
+        self._statistics = statistics
+
         logging.info("Stage with name {} created".format(self._name))
 
     def get_name(self) -> AnyStr:
@@ -45,6 +48,11 @@ class Stage:
         elif isinstance(self._user_input_actions, List):
             return self._user_input_actions
         return None
+
+    def get_statistics(self,
+                       scope: Scope,
+                       user: User) -> Optional[List[Stats]]:
+        return self._statistics
 
     def get_user_input_filter(self,
                               scope: Scope,
@@ -70,6 +78,15 @@ class Stage:
                     if input_string not in keyboard_buttons_strings:
                         return False
         return True
+
+    def count_statistics(self,
+                         input_string: AnyStr,
+                         scope: Scope,
+                         user: User,
+                         stage: Stage):
+        if statistics := self.get_statistics(scope, user):
+            for statistic in statistics:
+                statistic.step(scope, user, stage, input_string)
 
     def process_input(self,
                       input_string: AnyStr,
