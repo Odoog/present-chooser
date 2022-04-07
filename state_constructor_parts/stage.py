@@ -18,11 +18,13 @@ class Stage:
     def __init__(self,
                  name: AnyStr,
                  message: Optional[Message | Choice[Message]] = None,
+                 prerequisite_actions: Optional[List[Action]] = None,
                  user_input_actions: Optional[List[Action] | Choice[List[Action]]] = None,
                  user_input_filter: Optional[InputFilter | Choice[InputFilter]] = None,
                  statistics: Optional[List[Stats]] = None):
         self._name = name
         self._message = message
+        self._prerequisite_actions = prerequisite_actions
         self._user_input_actions = user_input_actions
         self._user_input_filter = user_input_filter
         self._statistics = statistics
@@ -39,6 +41,11 @@ class Stage:
             return self._message.get(scope, user)
         elif isinstance(self._message, Message):
             return self._message
+
+    def get_prerequisite_actions(self,
+                                 scope: Scope,
+                                 user: User) -> List[Action]:
+        return self._prerequisite_actions or []
 
     def get_user_input_actions(self,
                                scope: Scope,
@@ -92,9 +99,15 @@ class Stage:
                       input_string: AnyStr,
                       scope: Scope,
                       user: User) -> Message:
+
+        prerequisite_actions = self.get_prerequisite_actions(scope, user)
+        for prerequisite_action in prerequisite_actions:
+            prerequisite_action.apply(scope, user, input_string)
+
         if user_input_actions := self.get_user_input_actions(scope, user):
             for user_input_action in user_input_actions:
                 user_input_action.apply(scope, user, input_string)
+
         try:
             keyboard_buttons = list(itertools.chain(*self.get_message(scope, user).get_keyboard(scope, user).get_buttons(scope, user)))
             for keyboard_button in keyboard_buttons:

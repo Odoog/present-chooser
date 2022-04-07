@@ -57,10 +57,16 @@ class Bot:
         user = User(user_chat_id)
         current_user_stage = self._scope.get_stage(user.get_current_stage_name())
 
+        # Global command handler
+
         if self.global_command_handler(update_text, self._scope, user):
             return
 
+        # Statistics
+
         current_user_stage.count_statistics(update_text, self._scope, user, current_user_stage)
+
+        # Reply message
 
         transition_stage_message = current_user_stage.process_input(update_text, self._scope, user)
         transition_stage_message_text = transition_stage_message.get_text(self._scope, user)
@@ -71,11 +77,13 @@ class Bot:
             message_reply_markup = None
         else:
             keyboard_buttons = transition_stage_message_keyboard.get_buttons(self._scope, user)
-            keyboard_buttons_strings = [[button.get_text(self._scope, user) for button in keyboard_buttons_line] for keyboard_buttons_line in keyboard_buttons]
+            keyboard_buttons_strings = [[button.get_text(self._scope, user) for button in keyboard_buttons_line] for
+                                        keyboard_buttons_line in keyboard_buttons]
 
             if transition_stage_message_keyboard.is_inline_keyboard:
                 message_reply_markup = InlineKeyboardMarkup([list(
-                    map(lambda button: InlineKeyboardButton(button, callback_data=button), keyboard_buttons_string_line)) for keyboard_buttons_string_line in keyboard_buttons_strings],
+                    map(lambda button: InlineKeyboardButton(button, callback_data=button),
+                        keyboard_buttons_string_line)) for keyboard_buttons_string_line in keyboard_buttons_strings],
                     resize_keyboard=True,
                     one_time_keyboard=True)
             else:
@@ -91,13 +99,13 @@ class Bot:
                                                              message_id=user.get_variable("_last_sent_message_id"),
                                                              media=InputMediaPhoto(
                                                                  open(transition_stage_message_picture.get_picture_source(),
-                                                                      'rb')),
+                                                                     'rb')),
                                                              reply_markup=message_reply_markup)
 
                     message = context.bot.edit_message_caption(chat_id=user_chat_id,
-                                                     message_id=user.get_variable("_last_sent_message_id"),
-                                                     caption=transition_stage_message_text.text,
-                                                     reply_markup=message_reply_markup)
+                                                               message_id=user.get_variable("_last_sent_message_id"),
+                                                               caption=transition_stage_message_text.text,
+                                                               reply_markup=message_reply_markup)
                 except Exception:
                     message = context.bot.send_photo(chat_id=user_chat_id,
                                                      photo=open(transition_stage_message_picture.get_picture_source(),
