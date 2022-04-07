@@ -10,8 +10,8 @@ class Stats:
                  metric_function: 'Callable[[Scope, User, Stage, Any], ...]',
                  stat_object_getter_function: 'Callable[[Scope, User, Stage], ...]',
                  stat_object_setter_function: 'Callable[[Scope, User, Stage, Any], ...]',
-                 value_getter_function: 'Callable[[Scope, User, Stage, AnyStr, Any], ...]',
-                 value_setter_function: 'Callable[[Scope, User, Stage, AnyStr, Any], ...]'):
+                 value_getter_function: 'Callable[[Any, Scope, User, Stage, AnyStr, Any], ...]',
+                 value_setter_function: 'Callable[[Any, Scope, User, Stage, AnyStr, Any], ...]'):
         self._metric_name = metric_name
         self._metric_value = metric_value
         self._metric_function = metric_function
@@ -25,13 +25,16 @@ class Stats:
              user: 'User',
              stage: 'Stage',
              input_string: Optional[AnyStr] = None):
-        metric_value = self._value_getter_function(scope, user, stage, self._metric_name, self._metric_value)
+        stat_object = self._stat_object_getter_function(scope, user, stage)
+
+        metric_value = self._value_getter_function(stat_object, scope, user, stage, self._metric_name, self._metric_value)
         metric_value = self._metric_function(scope, user, stage, metric_value)
-        self._value_setter_function(scope, user, stage, self._metric_name, metric_value)
+        self._value_setter_function(stat_object, scope, user, stage, self._metric_name, metric_value)
+
+        self._stat_object_setter_function(scope, user, stage, stat_object)
 
 
-def stage_value_getter_function(self,
-                                stat_object,
+def stage_value_getter_function(stat_object,
                                 scope: 'Scope',
                                 user: 'User',
                                 stage: 'Stage',
@@ -44,8 +47,7 @@ def stage_value_getter_function(self,
     return stat_object[stage.get_name()][metric_name]
 
 
-def stage_value_setter_function(self,
-                                stat_object,
+def stage_value_setter_function(stat_object,
                                 scope: 'Scope',
                                 user: 'User',
                                 stage: 'Stage',
@@ -67,8 +69,8 @@ class StageStats(Stats):
         super().__init__(metric_name,
                          metric_value,
                          metric_function,
-                         stat_object_getter_function=lambda scope, user, stage: scope.get_variable("Stats"),
-                         stat_object_setter_function=lambda scope, user, stage, value: scope.change_variable("Stats", value),
+                         stat_object_getter_function=lambda scope, user, stage: scope.get_variable("stats") or {},
+                         stat_object_setter_function=lambda scope, user, stage, value: scope.change_variable("stats", value),
                          value_getter_function=stage_value_getter_function,
                          value_setter_function=stage_value_setter_function)
 

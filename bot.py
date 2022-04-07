@@ -60,6 +60,8 @@ class Bot:
         if self.global_command_handler(update_text, self._scope, user):
             return
 
+        current_user_stage.count_statistics(update_text, self._scope, user, current_user_stage)
+
         transition_stage_message = current_user_stage.process_input(update_text, self._scope, user)
         transition_stage_message_text = transition_stage_message.get_text(self._scope, user)
         transition_stage_message_keyboard = transition_stage_message.get_keyboard(self._scope, user)
