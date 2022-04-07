@@ -18,7 +18,8 @@ class Stage:
                  name: AnyStr,
                  message: Optional[Message | Choice[Message]] = None,
                  user_input_actions: Optional[List[Action] | Choice[List[Action]]] = None,
-                 user_input_filter: Optional[InputFilter | Choice[InputFilter]] = None):
+                 user_input_filter: Optional[InputFilter | Choice[InputFilter]] = None,
+                 statistics: Optional[List[Statistic]] = None):
         self._name = name
         self._message = message
         self._user_input_actions = user_input_actions

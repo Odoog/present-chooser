@@ -1,4 +1,5 @@
-from typing import Dict, Optional, AnyStr, List
+import logging
+from typing import Dict, Optional, AnyStr, List, Any
 
 from data_access_layer.database import Database
 
@@ -32,14 +33,18 @@ class Scope:
     def get_variable(self,
                      variable_name: AnyStr):
         self.update_info()
-        return self._global_variables[variable_name]
-
-    def try_get_variable(self,
-                         variable_name: AnyStr):
         try:
-            return self.get_variable(variable_name)
+            return self._global_variables[variable_name]
         except Exception:
             return None
+
+    def try_get_variable(self,
+                         variable_name: AnyStr,
+                         default_value: Any):
+        value = self.get_variable(variable_name)
+        if value is None:
+            self.change_variable(variable_name, default_value)
+            return default_value
 
     def get_stage(self,
                   stage_name: AnyStr) -> 'Optional[Stage]':
