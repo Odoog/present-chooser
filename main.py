@@ -16,6 +16,7 @@ from message_parts.message import Message, MessageText, SimpleTextMessage, Messa
 from global_transferable_entities.scope import Scope
 from state_constructor_parts.stage import Stage
 from google_tables import SheetsClient
+from state_constructor_parts.stats import StageStatsVisitCount
 from typing_module_extensions.choice import Choice
 
 if __name__ == '__main__':
@@ -74,7 +75,8 @@ if __name__ == '__main__':
                               actions=[ActionChangeUserVariable("age", "взрослому")])
                       ],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=[ActionChangeStage("AskingForSex")]),
+              user_input_actions=[ActionChangeStage("AskingForSex")],
+              statistics=[StageStatsVisitCount()]),
 
         Stage(name="AskingForSex",
               message=Message(
@@ -97,7 +99,8 @@ if __name__ == '__main__':
                       "подростку": [ActionChangeStage("AskingForMoney"), ActionChangeUserVariable("spend", [])],
                       "ребенку": [ActionChangeStage("AskingForAge2")],
                       "взрослому": [ActionChangeStage("AskingForReceiver")]
-                  })),
+                  }),
+              statistics=[StageStatsVisitCount()]),
 
         Stage(name="AskingForAge2",
               message=Message(
@@ -112,7 +115,8 @@ if __name__ == '__main__':
                               actions=[ActionChangeUserVariable("age2", "8-12 лет")])
                       ],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=[ActionChangeStage("AskingForMoney"), ActionChangeUserVariable("spend", [])]),
+              user_input_actions=[ActionChangeStage("AskingForMoney"), ActionChangeUserVariable("spend", [])],
+              statistics=[StageStatsVisitCount()]),
 
         Stage(name="AskingForReceiver",
               message=Message(
@@ -134,7 +138,8 @@ if __name__ == '__main__':
                       ],
                       buttons_layout=[2, 2],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=[ActionChangeStage("AskingForMoney"), ActionChangeUserVariable("spend", [])]),
+              user_input_actions=[ActionChangeStage("AskingForMoney"), ActionChangeUserVariable("spend", [])],
+              statistics=[StageStatsVisitCount()]),
 
         Stage(name="AskingForMoney",
               message=Message(
@@ -158,7 +163,8 @@ if __name__ == '__main__':
                   {
                       "Себе": [ActionChangeStage("ReadyToShow")],
                       "_": [ActionChangeStage("AskingForReason")],
-                  })),
+                  }),
+              statistics=[StageStatsVisitCount()]),
 
         Stage(name="AskingForReason",
               message=Message(
@@ -172,7 +178,8 @@ if __name__ == '__main__':
                               text="Нет",
                               actions=[ActionChangeStage("ReadyToShow")]),
                       ],
-                      is_non_keyboard_input_allowed=False))),
+                      is_non_keyboard_input_allowed=False)),
+              statistics=[StageStatsVisitCount()]),
 
         Stage(name="AskingForReason2",
               message=Message(
@@ -191,7 +198,8 @@ if __name__ == '__main__':
                       buttons_layout=[2, 2, 2, 2],
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=[ActionChangeUserVariableToInput("reason"),
-                                  ActionChangeStage("ReadyToShow")]),
+                                  ActionChangeStage("ReadyToShow")],
+              statistics=[StageStatsVisitCount()]),
 
         Stage(name="ReadyToShow",
               message=Message(
@@ -217,7 +225,8 @@ if __name__ == '__main__':
                                                     json.loads(user.get_variable("show_list"))[int(user.get_variable("good_id"))])
                                             ],
                                             False: [ActionChangeStage("Opening")]
-                                        })),
+                                        }),
+              statistics=[StageStatsVisitCount()]),
 
         Stage(name="ShowingGood",
               message=Message(
@@ -262,7 +271,8 @@ if __name__ == '__main__':
                          False: [
                              ActionChangeStage("ShowingLimit")
                          ]
-                     })),
+                     }),
+              statistics=[StageStatsVisitCount()]),
 
         Stage(name="ShowingLimit",
               message=Message(
@@ -276,7 +286,8 @@ if __name__ == '__main__':
                           MessageKeyboardButton(text="Выбрать еще один подарок",
                                                 actions=[ActionChangeStage("Opening")])
                       ],
-                      is_non_keyboard_input_allowed=False))),
+                      is_non_keyboard_input_allowed=False)),
+              statistics=[StageStatsVisitCount()]),
 
         Stage(name="ShowingFinish",
               message=Message(
@@ -290,7 +301,8 @@ if __name__ == '__main__':
                           MessageKeyboardButton(text="Выбрать еще один подарок",
                                                 actions=[ActionChangeStage("Opening")])
                       ],
-                      is_non_keyboard_input_allowed=False)))
+                      is_non_keyboard_input_allowed=False)),
+              statistics=[StageStatsVisitCount()])
 
     ], main_stage_name="MainMenu")
 
