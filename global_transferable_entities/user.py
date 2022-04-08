@@ -1,4 +1,4 @@
-from typing import List, AnyStr, Dict
+from typing import List, AnyStr, Dict, Any
 
 from data_access_layer.database import Database
 
@@ -37,16 +37,21 @@ class User:
         Database.change_user_column(self.chat_id, 'user_variables', self._user_variables)
 
     def try_get_variable(self,
-                         variable_name: AnyStr):
-        try:
-            return self.get_variable(variable_name)
-        except Exception:
-            return None
+                         variable_name: AnyStr,
+                         default_value: Any):
+        value = self.get_variable(variable_name)
+        if value is None:
+            self.change_variable(variable_name, default_value)
+            return default_value
+        return value
 
     def get_variable(self,
                      variable_name: str):
-        self.update_info()
-        return self._user_variables[variable_name]
+        try:
+            self.update_info()
+            return self._user_variables[variable_name]
+        except Exception:
+            return None
 
     def delete(self):
         Database.delete_user(self.chat_id)

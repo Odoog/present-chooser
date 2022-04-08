@@ -17,7 +17,7 @@ from message_parts.message import Message, MessageText, SimpleTextMessage, Messa
 from global_transferable_entities.scope import Scope
 from state_constructor_parts.stage import Stage
 from google_tables import SheetsClient
-from state_constructor_parts.stats import StageStatsVisitCount
+from state_constructor_parts.stats import StageStatsVisitCount, UserStatsVisitCount
 from typing_module_extensions.choice import Choice
 
 if __name__ == '__main__':
@@ -38,8 +38,8 @@ if __name__ == '__main__':
             all_goods = list(
                 filter(lambda good: user.get_variable("receiver") in good.receiver or good.is_universal == "TRUE", all_goods))
         all_goods = list(
-            filter(lambda good: user.try_get_variable("reason") in good.reason or
-                                good.is_universal_reason == "TRUE" and (user.try_get_variable("reason") == "Другой повод" or user.try_get_variable("reason") is None),
+            filter(lambda good: user.get_variable("reason") in good.reason or
+                                good.is_universal_reason == "TRUE" and (user.get_variable("reason") == "Другой повод" or user.get_variable("reason") is None),
                    all_goods))
 
         return sorted(all_goods, key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
@@ -77,7 +77,8 @@ if __name__ == '__main__':
                       ],
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=[ActionChangeStage("AskingForSex")],
-              statistics=[StageStatsVisitCount()]),
+              statistics=[StageStatsVisitCount(),
+                          UserStatsVisitCount()]),
 
         Stage(name="AskingForSex",
               message=Message(
@@ -101,7 +102,8 @@ if __name__ == '__main__':
                       "ребенку": [ActionChangeStage("AskingForAge2")],
                       "взрослому": [ActionChangeStage("AskingForReceiver")]
                   }),
-              statistics=[StageStatsVisitCount()]),
+              statistics=[StageStatsVisitCount(),
+                          UserStatsVisitCount()]),
 
         Stage(name="AskingForAge2",
               message=Message(
@@ -117,7 +119,8 @@ if __name__ == '__main__':
                       ],
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=[ActionChangeStage("AskingForMoney"), ActionChangeUserVariable("spend", [])],
-              statistics=[StageStatsVisitCount()]),
+              statistics=[StageStatsVisitCount(),
+                          UserStatsVisitCount()]),
 
         Stage(name="AskingForReceiver",
               message=Message(
@@ -140,7 +143,8 @@ if __name__ == '__main__':
                       buttons_layout=[2, 2],
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=[ActionChangeStage("AskingForMoney"), ActionChangeUserVariable("spend", [])],
-              statistics=[StageStatsVisitCount()]),
+              statistics=[StageStatsVisitCount(),
+                          UserStatsVisitCount()]),
 
         Stage(name="AskingForMoney",
               message=Message(
@@ -160,12 +164,13 @@ if __name__ == '__main__':
                       buttons_layout=[2, 2, 1],
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=Choice(
-                  lambda scope, user: user.try_get_variable("receiver"),
+                  lambda scope, user: user.get_variable("receiver"),
                   {
                       "Себе": [ActionChangeStage("ReadyToShow")],
                       "_": [ActionChangeStage("AskingForReason")],
                   }),
-              statistics=[StageStatsVisitCount()]),
+              statistics=[StageStatsVisitCount(),
+                          UserStatsVisitCount()]),
 
         Stage(name="AskingForReason",
               message=Message(
@@ -180,7 +185,8 @@ if __name__ == '__main__':
                               actions=[ActionChangeStage("ReadyToShow")]),
                       ],
                       is_non_keyboard_input_allowed=False)),
-              statistics=[StageStatsVisitCount()]),
+              statistics=[StageStatsVisitCount(),
+                          UserStatsVisitCount()]),
 
         Stage(name="AskingForReason2",
               message=Message(
@@ -200,7 +206,8 @@ if __name__ == '__main__':
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=[ActionChangeUserVariableToInput("reason"),
                                   ActionChangeStage("ReadyToShow")],
-              statistics=[StageStatsVisitCount()]),
+              statistics=[StageStatsVisitCount(),
+                          UserStatsVisitCount()]),
 
         Stage(name="ReadyToShow",
               message=Message(
@@ -227,7 +234,8 @@ if __name__ == '__main__':
                                             ],
                                             False: [ActionChangeStage("Opening")]
                                         }),
-              statistics=[StageStatsVisitCount()]),
+              statistics=[StageStatsVisitCount(),
+                          UserStatsVisitCount()]),
 
         Stage(name="ShowingGood",
               message=Message(
@@ -273,7 +281,8 @@ if __name__ == '__main__':
                              ActionChangeStage("ShowingLimit")
                          ]
                      }),
-              statistics=[StageStatsVisitCount()]),
+              statistics=[StageStatsVisitCount(),
+                          UserStatsVisitCount()]),
 
         Stage(name="ShowingLimit",
               message=Message(
@@ -288,7 +297,8 @@ if __name__ == '__main__':
                                                 actions=[ActionChangeStage("Opening")])
                       ],
                       is_non_keyboard_input_allowed=False)),
-              statistics=[StageStatsVisitCount()]),
+              statistics=[StageStatsVisitCount(),
+                          UserStatsVisitCount()]),
 
         Stage(name="ShowingFinish",
               message=Message(
@@ -303,7 +313,8 @@ if __name__ == '__main__':
                                                 actions=[ActionChangeStage("Opening")])
                       ],
                       is_non_keyboard_input_allowed=False)),
-              statistics=[StageStatsVisitCount()])
+              statistics=[StageStatsVisitCount(),
+                          UserStatsVisitCount()])
 
     ], main_stage_name="MainMenu")
 

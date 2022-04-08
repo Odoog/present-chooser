@@ -45,6 +45,7 @@ class Scope:
         if value is None:
             self.change_variable(variable_name, default_value)
             return default_value
+        return value
 
     def get_stage(self,
                   stage_name: AnyStr) -> 'Optional[Stage]':
