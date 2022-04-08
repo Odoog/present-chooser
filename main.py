@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import random
 from datetime import datetime
 
 from telegram import ParseMode
@@ -41,7 +42,7 @@ if __name__ == '__main__':
                                 good.is_universal_reason == "TRUE" and (user.try_get_variable("reason") == "Другой повод" or user.try_get_variable("reason") is None),
                    all_goods))
 
-        return sorted(all_goods, key=lambda good: -sheets.get_good_category_rating(scope, user, good.ind))
+        return sorted(all_goods, key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
 
 
     def generate_text_for_current_good(scope, user):
