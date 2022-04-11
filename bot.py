@@ -91,6 +91,10 @@ class Bot:
                                                            resize_keyboard=True,
                                                            one_time_keyboard=True)
 
+        if transition_stage_message.should_delete_last_message:
+            context.bot.delete_message(chat_id=user_chat_id,
+                                       message_id=user.get_variable("_last_sent_message_id"))
+
         if transition_stage_message_picture is not None:
             if transition_stage_message.should_replace_last_message:
 

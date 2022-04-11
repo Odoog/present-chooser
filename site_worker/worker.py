@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import os
 import string
 import random
 
@@ -38,8 +39,10 @@ class Worker:
         with open('site_worker/ex.html', 'r', encoding="utf-8") as f:
             site_blank = f.read().replace("{goods}", content)
         site_id = id_generator()
-        with open('/var/www/html/present-chooser/build/{}.html'.format(site_id), 'w', encoding="utf-8") as f:
-        #with open('site_worker/sites/{}.html'.format(site_id), 'w', encoding="utf-8") as f:
+
+        site_disk_source = "site_worker/sites/{}.html" if os.environ['platform'] == "local" else "/var/www/html/present-chooser/build/{}.html"
+
+        with open(site_disk_source.format(site_id), 'w', encoding="utf-8") as f:
             f.write(site_blank)
         logging.info("Build site with id {}".format(site_id))
         return site_id

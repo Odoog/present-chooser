@@ -120,11 +120,13 @@ class Message:
                     ]
                  ] = None,
                  keyboard: Optional[MessageKeyboard | Choice[MessageKeyboard]] = None,
-                 should_replace_last_message: bool = False):
+                 should_replace_last_message: bool = False,
+                 should_delete_last_message: bool = False):
         self._text = text
         self._picture = picture
         self._keyboard = keyboard
         self.should_replace_last_message = should_replace_last_message
+        self.should_delete_last_message = should_delete_last_message
 
     def get_text(self,
                  scope: 'Scope',

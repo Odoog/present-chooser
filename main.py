@@ -296,7 +296,8 @@ if __name__ == '__main__':
                           MessageKeyboardButton(text="Выбрать еще один подарок",
                                                 actions=[ActionChangeStage("Opening")])
                       ],
-                      is_non_keyboard_input_allowed=False)),
+                      is_non_keyboard_input_allowed=False),
+                  should_delete_last_message=True),
               statistics=[StageStatsVisitCount(),
                           UserStatsVisitCount()]),
 
@@ -312,7 +313,8 @@ if __name__ == '__main__':
                           MessageKeyboardButton(text="Выбрать еще один подарок",
                                                 actions=[ActionChangeStage("Opening")])
                       ],
-                      is_non_keyboard_input_allowed=False)),
+                      is_non_keyboard_input_allowed=False),
+                  should_delete_last_message=True),
               statistics=[StageStatsVisitCount(),
                           UserStatsVisitCount()])
 

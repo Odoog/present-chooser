@@ -1,11 +1,13 @@
-from typing import List, AnyStr, Dict, Any
+from typing import List, AnyStr, Dict, Any, Optional
 
 from data_access_layer.database import Database
+from state_constructor_parts.stats import Stats
 
 
 class User:
     _stage_history: List[AnyStr]
     _user_variables: Dict[AnyStr, AnyStr]
+    _statistics: Optional[List[Stats]]
 
     def __init__(self,
                  chat_id: AnyStr):
@@ -55,3 +57,15 @@ class User:
 
     def delete(self):
         Database.delete_user(self.chat_id)
+
+    def get_statistics(self, scope, user):
+        return self._statistics
+
+    def count_statistics(self,
+                         input_string: AnyStr,
+                         scope: 'Scope',
+                         user: 'User',
+                         stage: 'Stage'):
+        if statistics := self.get_statistics(scope, user):
+            for statistic in statistics:
+                statistic.step(scope, user, stage, input_string)
