@@ -24,25 +24,45 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
     logging.info("Program started")
 
+
     # Example of using state constructor to create a bot.
 
     def get_all_relevant_goods(scope, user):
         all_goods = sheets.get_all_goods()
-        all_goods = list(filter(lambda good: user.get_variable("age") in good.age or good.is_universal == "TRUE", all_goods))
-        all_goods = list(filter(lambda good: user.get_variable("sex") in good.sex or good.is_universal == "TRUE", all_goods))
-        all_goods = list(filter(lambda good: int(user.get_variable("spend").split('-')[0]) <= int("".join(filter(str.isdigit, good.price_actual))) <= int(user.get_variable("spend").split('-')[1]), all_goods))
+        logging.info("All Goods: " + " ".join([str(good.ind) for good in all_goods]))
+        all_goods = list(
+            filter(lambda good: user.get_variable("age") in good.age or good.is_universal == "TRUE", all_goods))
+        logging.info("All Goods age filter: " + " ".join([str(good.ind) for good in all_goods]))
+        all_goods = list(
+            filter(lambda good: user.get_variable("sex") in good.sex or good.is_universal == "TRUE", all_goods))
+        logging.info("All Goods sex filter: " + " ".join([str(good.ind) for good in all_goods]))
+        all_goods = list(filter(lambda good: int(user.get_variable("spend").split('-')[0]) <= int(
+            "".join(filter(str.isdigit, good.price_actual))) <= int(user.get_variable("spend").split('-')[1]),
+                                all_goods))
+        logging.info("All Goods spend filter: " + " ".join([str(good.ind) for good in all_goods]))
         if user.get_variable("age") == "ребенку":
             all_goods = list(
                 filter(lambda good: user.get_variable("age2") in good.age2 or good.is_universal == "TRUE", all_goods))
+            logging.info("All Goods age2 filter: " + "".join([str(good.ind) for good in all_goods]))
         if user.get_variable("age") == "взрослому":
             all_goods = list(
-                filter(lambda good: user.get_variable("receiver") in good.receiver or good.is_universal == "TRUE", all_goods))
+                filter(lambda good: user.get_variable("receiver") in good.receiver or good.is_universal == "TRUE",
+                       all_goods))
+            logging.info("All Goods adult filter: " + " ".join([str(good.ind) for good in all_goods]))
         all_goods = list(
             filter(lambda good: user.get_variable("reason") in good.reason or
-                                good.is_universal_reason == "TRUE" and (user.get_variable("reason") == "Другой повод" or user.get_variable("reason") is None),
+                                good.is_universal_reason == "TRUE" and (
+                                        user.get_variable("reason") == "Другой повод" or user.get_variable(
+                                    "reason") is None),
                    all_goods))
+        logging.info("All Goods reason filter: " + " ".join([str(good.ind) for good in all_goods]))
 
-        return sorted(all_goods, key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
+        all_goods = sorted(all_goods,
+                           key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
+
+        logging.info("All Goods sorted: " + " ".join([str(good.ind) for good in all_goods]))
+
+        return all_goods
 
 
     def generate_text_for_current_good(scope, user):
@@ -56,8 +76,10 @@ if __name__ == '__main__':
 
 
     scope = Scope([
+
         Stage(name="NewUser",
               user_input_actions=[ActionChangeStage("Opening")]),
+
         Stage(name="Opening",
               message=Message(
                   text=MessageText(
@@ -184,7 +206,8 @@ if __name__ == '__main__':
                               actions=[ActionChangeStage("AskingForReason2")]),
                           MessageKeyboardButton(
                               text="Нет",
-                              actions=[ActionChangeStage("ReadyToShow")]),
+                              actions=[ActionChangeUserVariable("reason", None),
+                                       ActionChangeStage("ReadyToShow")]),
                       ],
                       is_non_keyboard_input_allowed=False)),
               statistics=[StageStatsVisitCount(),
@@ -213,11 +236,12 @@ if __name__ == '__main__':
 
         Stage(name="ReadyToShow",
               message=Message(
-                  text=lambda scope, user: MessageText("Отлично! У меня для вас много интересных варинтов — выбирайте :) \n\nЗапоминать "
-                                                       "ничего не нужно — когда вы нажмете \"Стоп\", я покажу вам все подарки, который вам"
-                                                       " понравились.") if len(get_all_relevant_goods(scope, user)) > 0 else
-                                            MessageText("Подарков, подходящих под ваши критерии, пока нет :( "
-                                                        "\nПопробуйте изменить параметры — например, бюджет"),
+                  text=lambda scope, user: MessageText(
+                      "Отлично! У меня для вас много интересных варинтов — выбирайте :) \n\nЗапоминать "
+                      "ничего не нужно — когда вы нажмете \"Стоп\", я покажу вам все подарки, который вам"
+                      " понравились.") if len(get_all_relevant_goods(scope, user)) > 0 else
+                  MessageText("Подарков, подходящих под ваши критерии, пока нет :( "
+                              "\nПопробуйте изменить параметры — например, бюджет"),
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(text="Хорошо")
@@ -232,7 +256,8 @@ if __name__ == '__main__':
                                                     [good.ind for good in get_all_relevant_goods(scope, user)])),
                                                 ActionChangeUserVariable("fav_list", "[]"),
                                                 ActionChangeUserVariable("showing_id", lambda scope, user:
-                                                    json.loads(user.get_variable("show_list"))[int(user.get_variable("good_id"))])
+                                                json.loads(user.get_variable("show_list"))[
+                                                    int(user.get_variable("good_id"))])
                                             ],
                                             False: [ActionChangeStage("Opening")]
                                         }),
@@ -290,7 +315,7 @@ if __name__ == '__main__':
               message=Message(
                   text=lambda scope, user: MessageText((
                       "Я показал всё, что смог подобрать для вас :) \n\nВсе подарки, которые вам понравились, собраны [здесь]({})").format(
-                      "http://77.87.212.229/present-chooser/build/" + worker.build_site(
+                      "http://2.59.43.130/present-chooser/build/" + worker.build_site(
                           json.loads(user.get_variable("fav_list"))) + ".html"),
                       ParseMode.MARKDOWN),
                   keyboard=MessageKeyboard(
@@ -307,7 +332,7 @@ if __name__ == '__main__':
               message=Message(
                   text=lambda scope, user: MessageText((
                       "Все подарки, которые вам понравились, собраны [здесь]({}) :) Хорошего дня!").format(
-                      "http://77.87.212.229/present-chooser/build/" + worker.build_site(
+                      "http://2.59.43.130/present-chooser/build/" + worker.build_site(
                           json.loads(user.get_variable("fav_list"))) + ".html"),
                       ParseMode.MARKDOWN),
                   keyboard=MessageKeyboard(
