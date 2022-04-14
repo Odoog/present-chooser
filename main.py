@@ -76,7 +76,9 @@ if __name__ == '__main__':
                               actions=[ActionChangeUserVariable("age", "взрослому")])
                       ],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=[ActionChangeStage("AskingForSex")],
+              user_input_actions=[ActionChangeStage("AskingForSex"),
+                                  Action(lambda scope, user, input_text: sheets.clear_good_rating(scope, user))],
+              # Обнуляем рейтинг подарков для пользователя.
               statistics=[StageStatsVisitCount(),
                           UserStatsVisitCount()]),
 
