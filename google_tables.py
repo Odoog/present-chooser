@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import datetime, timedelta
+from typing import List
 
 from models.good import Good
 import pygsheets
@@ -48,6 +49,9 @@ class SheetsClient:
             for key, cat_name in enumerate(cat_names):
                 self.goods_category_rating[cat_name] = int(cat_rating[key] if cat_rating[key] != "" else 0)
         return self.goods_category_rating
+
+    def get_goods(self, inds) -> List[Good]:
+        return [self.get_good_by_id(ind) for ind in inds]
 
     def get_good_by_id(self, ind) -> Good:
         goods = self.get_all_goods()

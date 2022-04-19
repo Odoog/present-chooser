@@ -64,6 +64,14 @@ if __name__ == '__main__':
 
         return all_goods
 
+    def sort_goods(scope, user):
+        good_id = int(user.get_variable("good_id"))
+        goods = sheets.get_goods(json.loads(user.get_variable("show_list")))
+        # Сортируем только те которые пользователь еще не просмотрел
+        logging.info("goods were: " + ",".join([str(good.ind) for good in goods]))
+        goods = goods[:good_id] + sorted(goods[good_id:], key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
+        logging.info("goods are: " + ",".join([str(good.ind) for good in goods]))
+        user.change_variable("show_list", json.dumps([good.ind for good in goods]))
 
     def generate_text_for_current_good(scope, user):
         good = sheets.get_good_by_id(int(user.get_variable("showing_id")))
@@ -300,6 +308,7 @@ if __name__ == '__main__':
                          True: [
                              ActionChangeUserVariable("good_id",
                                                       lambda scope, user: str(int(user.get_variable("good_id")) + 1)),
+                             Action(lambda scope, user, text: sort_goods(scope, user)), # Сортируем оствашиеся для показа товары по рейтингу
                              ActionChangeUserVariable("showing_id",
                                                       lambda scope, user: json.loads(user.get_variable("show_list"))[
                                                           int(user.get_variable("good_id"))])
