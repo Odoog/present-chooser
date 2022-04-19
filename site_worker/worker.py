@@ -27,7 +27,8 @@ class Worker:
                 .replace("{src}", good.link)\
                 .replace("{image-path}", good.photo_link)\
                 .replace("{description}", good.name)\
-                .replace("{price}", good.price_actual)
+                .replace("{price}", good.price_actual)\
+                .replace("{store}", good.shop)
             with open('site_worker/goods/{}.txt'.format(good.ind), 'w', encoding="utf-8") as f:
                 f.write(good_block_code)
 
