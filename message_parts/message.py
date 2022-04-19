@@ -13,6 +13,7 @@ import hashlib
 
 import requests
 
+
 class MessageText:
 
     def __init__(self,
@@ -34,7 +35,7 @@ class MessagePicture:
         self.picture_file_link = picture_file_link
 
     def get_picture_source(self):
-        if self.picture_file_link is not None: # Телеграм плохо работает (работает ли вообще?) с web link на image, поэтому закачиваем изображение к себе
+        if self.picture_file_link is not None:  # Телеграм плохо работает (работает ли вообще?) с web link на image, поэтому закачиваем изображение к себе
             link_hash = hashlib.md5(str.encode(self.picture_file_link)).hexdigest()
             file_disc_source = 'resources/temp_image{0}.jpg'.format(link_hash)
             if not exists(file_disc_source):
@@ -97,8 +98,9 @@ class MessageKeyboard:
         current_button_index = 0
         current_layout_row_index = 0
         while current_button_index < len(buttons) and current_layout_row_index < len(self._buttons_layout):
-            count_of_buttons_to_add = min(len(buttons) - current_button_index, self._buttons_layout[current_layout_row_index])
-            buttons_layout.append(buttons[current_button_index : current_button_index + count_of_buttons_to_add])
+            count_of_buttons_to_add = min(len(buttons) - current_button_index,
+                                          self._buttons_layout[current_layout_row_index])
+            buttons_layout.append(buttons[current_button_index: current_button_index + count_of_buttons_to_add])
             current_layout_row_index += 1
             current_button_index += count_of_buttons_to_add
         return buttons_layout
@@ -108,34 +110,45 @@ class Message:
 
     def __init__(self,
                  text: Optional[
-                    Union[
+                     Union[
                          MessageText | Choice[MessageText],
                          Callable[..., MessageText] | Choice[Callable[..., MessageText]]
-                    ]
+                     ]
                  ] = None,
                  picture: Optional[
-                    Union[
+                     Union[
                          MessagePicture | Choice[MessagePicture],
                          Callable[..., MessagePicture] | Choice[Callable[..., MessagePicture]]
-                    ]
+                     ]
                  ] = None,
                  keyboard: Optional[MessageKeyboard | Choice[MessageKeyboard]] = None,
                  should_replace_last_message: bool = False,
-                 should_delete_last_message: bool = False):
+                 should_delete_last_message: bool = False,
+                 text_processor_method: Callable[..., Optional[MessageText]] = lambda text: text):
         self._text = text
         self._picture = picture
         self._keyboard = keyboard
         self.should_replace_last_message = should_replace_last_message
         self.should_delete_last_message = should_delete_last_message
+        self._text_processor_method = text_processor_method
 
     def get_text(self,
                  scope: 'Scope',
                  user: 'User') -> Optional[MessageText]:
         if isinstance(self._text, Choice):
             text = self._text.get(scope, user)
-            return text(scope, user) if callable(text) else text
+            return self.get_text_processor_method()(text(scope, user) if callable(text) else text)
         else:
-            return self._text(scope, user) if callable(self._text) else self._text
+            return self.get_text_processor_method()(self._text(scope, user) if callable(self._text) else self._text)
+
+    def get_text_processor_method(self) -> Callable[..., Optional[MessageText]]:
+        text_processor_method = self._text_processor_method
+        self._text_processor_method = lambda text: text
+        return text_processor_method
+
+    def set_onetime_text_processor_method(self,
+                                          text_processor_method: Callable[..., Optional[MessageText]]):
+        self._text_processor_method = text_processor_method
 
     def get_picture(self,
                     scope: 'Scope',

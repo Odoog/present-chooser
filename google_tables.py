@@ -53,9 +53,13 @@ class SheetsClient:
         goods = self.get_all_goods()
         return goods[ind - 1]
 
+    def clear_good_rating(self, scope, user):
+        user.change_variable("goods_rating", {})
+        user.change_variable("categories_rating", {})
+
     def change_good_rating(self, scope, user, ind, iter_value):
-        if (goods_rating := scope.get_variable("goods_rating")) is None:
-            scope.change_variable("goods_rating", {})
+        if (goods_rating := user.get_variable("goods_rating")) is None:
+            user.change_variable("goods_rating", {})
             goods_rating = {}
 
         if ind in goods_rating:
@@ -63,12 +67,12 @@ class SheetsClient:
         else:
             goods_rating[ind] = iter_value
 
-        scope.change_variable("goods_rating", goods_rating)
+        user.change_variable("goods_rating", goods_rating)
 
         category = self.get_good_by_id(ind).category
 
-        if (categories_rating := scope.get_variable("categories_rating")) is None:
-            scope.change_variable("categories_rating", {})
+        if (categories_rating := user.get_variable("categories_rating")) is None:
+            user.change_variable("categories_rating", {})
             categories_rating = {}
 
         if category in categories_rating:
@@ -76,13 +80,13 @@ class SheetsClient:
         else:
             categories_rating[category] = iter_value
 
-        scope.change_variable("categories_rating", categories_rating)
+        user.change_variable("categories_rating", categories_rating)
 
     def get_good_category_rating(self, scope, user, ind):
         category = self.get_good_by_id(ind).category
 
-        if (categories_rating := scope.get_variable("categories_rating")) is None:
-            scope.change_variable("categories_rating", {})
+        if (categories_rating := user.get_variable("categories_rating")) is None:
+            user.change_variable("categories_rating", {})
             categories_rating = {}
 
         if category in categories_rating:

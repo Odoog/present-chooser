@@ -24,13 +24,13 @@ class Database:
         if Database._con is None:
             Database._connect()
 
-        logging.info('DB request: {}'.format(query))
+        # logging.info('DB request: {}'.format(query))
 
-        if params is not None:
+        '''if params is not None:
             if isinstance(params, list):
                 logging.info('DB params: {}'.format(','.join(str(param) for param in params)))
             else:
-                logging.info('DB params: {}'.format(str(params)))
+                logging.info('DB params: {}'.format(str(params))) '''
 
         try:
             if params is not None:
