@@ -55,12 +55,15 @@ class Bot:
         logging.info("Get the message with text : {}".format(update_text))
 
         user = User(user_chat_id)
-        current_user_stage = self._scope.get_stage(user.get_current_stage_name())
 
         # Global command handler
 
         if self.global_command_handler(update_text, self._scope, user):
             return
+
+        # Get current stage
+
+        current_user_stage = self._scope.get_stage(user.get_current_stage_name())
 
         # Statistics
 
@@ -139,4 +142,6 @@ class Bot:
         if text == "kill":
             user.delete()
             return True
+        if text == "/start":
+            user.change_stage("NewUser")  # Команда start принудительно обновляет этап юзера но продолжает исполнение, эмулируя удаление пользователя.
         return False
