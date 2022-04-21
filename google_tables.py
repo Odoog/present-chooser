@@ -55,6 +55,7 @@ class SheetsClient:
 
     def get_good_by_id(self, ind) -> Good:
         goods = self.get_all_goods()
+        logging.info("get_good_by_id | Получаю товар по id = {} получил = {}".format(ind, goods[ind - 1].name))
         return goods[ind - 1]
 
     def clear_good_rating(self, scope, user):
@@ -73,6 +74,9 @@ class SheetsClient:
 
         user.change_variable("goods_rating", goods_rating)
 
+        logging.info("change_good_rating | Меняю рейтинг категории у товара " + self.get_good_by_id(
+            ind).name + " с категорией " + self.get_good_by_id(ind).category)
+
         category = self.get_good_by_id(ind).category
 
         if (categories_rating := user.get_variable("categories_rating")) is None:
@@ -84,9 +88,12 @@ class SheetsClient:
         else:
             categories_rating[category] = iter_value
 
+        logging.info("change_good_rating | Новый рейтинг этой категории стал: {}".format(str(categories_rating[category])))
+
         user.change_variable("categories_rating", categories_rating)
 
     def get_good_category_rating(self, scope, user, ind):
+
         category = self.get_good_by_id(ind).category
 
         if (categories_rating := user.get_variable("categories_rating")) is None:

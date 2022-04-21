@@ -60,18 +60,22 @@ if __name__ == '__main__':
         all_goods = sorted(all_goods,
                            key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
 
-        logging.info("All Goods sorted: " + " ".join([str(good.ind) for good in all_goods]))
+        logging.info(
+            "All Goods sorted: " + " ".join([str(good.ind) + " " + good.category + "\n" for good in all_goods]))
 
         return all_goods
+
 
     def sort_goods(scope, user):
         good_id = int(user.get_variable("good_id"))
         goods = sheets.get_goods(json.loads(user.get_variable("show_list")))
         # Сортируем только те которые пользователь еще не просмотрел
-        logging.info("goods were: " + ",".join([str(good.ind) for good in goods]))
-        goods = goods[:good_id] + sorted(goods[good_id:], key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
-        logging.info("goods are: " + ",".join([str(good.ind) for good in goods]))
+        logging.info("goods were: " + ",".join([str(good.ind) + " " + good.category + " " + str(sheets.get_good_category_rating(scope, user, good.ind)) + "\n" for good in goods]))
+        goods = goods[:good_id] + sorted(goods[good_id:], key=lambda good: (
+            -sheets.get_good_category_rating(scope, user, good.ind), random.random()))
+        logging.info("goods are: " + ",".join([str(good.ind) + " " + good.category + " " + str(sheets.get_good_category_rating(scope, user, good.ind)) + "\n" for good in goods]))
         user.change_variable("show_list", json.dumps([good.ind for good in goods]))
+
 
     def generate_text_for_current_good(scope, user):
         good = sheets.get_good_by_id(int(user.get_variable("showing_id")))
@@ -281,19 +285,11 @@ if __name__ == '__main__':
                       buttons=[
                           MessageKeyboardButton(
                               text="Нравится",
-                              actions=[Action(lambda scope, user, input: sheets.change_good_rating(scope, user,
-                                                                                                   int(user.get_variable(
-                                                                                                       "good_id")), 1)),
-                                       ActionChangeUserVariable("fav_list", lambda scope, user: json.dumps(
+                              actions=[ActionChangeUserVariable("fav_list", lambda scope, user: json.dumps(
                                            json.loads(user.get_variable("fav_list")) + [
                                                json.loads(user.get_variable("show_list"))[
                                                    int(user.get_variable("good_id")) - 1]]))]),
-                          MessageKeyboardButton(
-                              text="Не подходит",
-                              actions=[Action(lambda scope, user, input: sheets.change_good_rating(scope, user,
-                                                                                                   int(user.get_variable(
-                                                                                                       "good_id")),
-                                                                                                   -1))]),
+                          MessageKeyboardButton(text="Не подходит"),
                           MessageKeyboardButton(
                               text="Стоп",
                               actions=[ActionChangeStage("ShowingFinish")])
@@ -306,9 +302,14 @@ if __name__ == '__main__':
                   json.loads(user.get_variable("show_list"))),
                      {
                          True: [
+                             Action(lambda scope, user, input: sheets.change_good_rating(scope, user,
+                                                                                         int(user.get_variable(
+                                                                                             "showing_id")),
+                                                                                         1 if input == "Нравится" else -1)),
                              ActionChangeUserVariable("good_id",
                                                       lambda scope, user: str(int(user.get_variable("good_id")) + 1)),
-                             Action(lambda scope, user, text: sort_goods(scope, user)), # Сортируем оствашиеся для показа товары по рейтингу
+                             Action(lambda scope, user, text: sort_goods(scope, user)),
+                             # Сортируем оствашиеся для показа товары по рейтингу
                              ActionChangeUserVariable("showing_id",
                                                       lambda scope, user: json.loads(user.get_variable("show_list"))[
                                                           int(user.get_variable("good_id"))])
