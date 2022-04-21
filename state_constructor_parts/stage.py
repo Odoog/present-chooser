@@ -21,15 +21,20 @@ class Stage:
                  prerequisite_actions: Optional[List[Action]] = None,
                  user_input_actions: Optional[List[Action] | Choice[List[Action]]] = None,
                  user_input_filter: Optional[InputFilter | Choice[InputFilter]] = None,
-                 statistics: Optional[List[Stats]] = None):
+                 statistics: Optional[List[Stats]] = None,
+                 is_gatehouse: bool = False): # TODO: Автоматическое определение IsGatehouse в зависимости от прикрепленных actions.
         self._name = name
         self._message = message
         self._prerequisite_actions = prerequisite_actions
         self._user_input_actions = user_input_actions
         self._user_input_filter = user_input_filter
         self._statistics = statistics
+        self._is_gatehouse = is_gatehouse
 
         logging.info("Stage with name {} created".format(self._name))
+
+    def is_gatehouse(self) -> bool:
+        return self._is_gatehouse
 
     def get_name(self) -> AnyStr:
         return self._name

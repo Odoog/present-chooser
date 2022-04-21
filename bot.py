@@ -2,7 +2,7 @@ import logging
 from types import SimpleNamespace
 from typing import AnyStr
 
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update, InputMediaPhoto
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update, InputMediaPhoto, ReplyKeyboardRemove
 from telegram.ext import MessageHandler, Filters, Updater, CallbackQueryHandler, CallbackContext
 from telegram.replykeyboardmarkup import ReplyKeyboardMarkup
 
@@ -77,7 +77,7 @@ class Bot:
         transition_stage_message_picture = transition_stage_message.get_picture(self._scope, user)
 
         if transition_stage_message_keyboard is None:
-            message_reply_markup = None
+            message_reply_markup = ReplyKeyboardRemove()  # Если клавиатуры нет, убираем существующую.
         else:
             keyboard_buttons = transition_stage_message_keyboard.get_buttons(self._scope, user)
             keyboard_buttons_strings = [[button.get_text(self._scope, user) for button in keyboard_buttons_line] for
@@ -105,7 +105,8 @@ class Bot:
                     message = context.bot.edit_message_media(chat_id=user_chat_id,
                                                              message_id=user.get_variable("_last_sent_message_id"),
                                                              media=InputMediaPhoto(
-                                                                 open(transition_stage_message_picture.get_picture_source(),
+                                                                 open(
+                                                                     transition_stage_message_picture.get_picture_source(),
                                                                      'rb')),
                                                              reply_markup=message_reply_markup)
 
@@ -135,6 +136,11 @@ class Bot:
                                                reply_markup=message_reply_markup)
         user.change_variable("_last_sent_message_id", message.message_id)
 
+        # Если этап на котором оказался пользователь - проходная, то сразу обрабатываем его и переходим к следующему.
+        if self._scope.get_stage(user.get_current_stage_name()).is_gatehouse():
+            self.process_message(update,
+                                 context)
+
     def global_command_handler(self,
                                text: AnyStr,
                                scope: Scope,
@@ -143,5 +149,6 @@ class Bot:
             user.delete()
             return True
         if text == "/start":
-            user.change_stage("NewUser")  # Команда start принудительно обновляет этап юзера но продолжает исполнение, эмулируя удаление пользователя.
+            user.change_stage(
+                "NewUser")  # Команда start принудительно обновляет этап юзера но продолжает исполнение, эмулируя удаление пользователя.
         return False

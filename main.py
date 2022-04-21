@@ -262,7 +262,7 @@ if __name__ == '__main__':
               user_input_actions=Choice(lambda scope, user: len(get_all_relevant_goods(scope, user)) > 0,
                                         {
                                             True: [
-                                                ActionChangeStage("ShowingGood"),
+                                                ActionChangeStage("ShowingGoodPre"),
                                                 ActionChangeUserVariable("good_id", "0"),
                                                 ActionChangeUserVariable("show_list", lambda scope, user: json.dumps(
                                                     [good.ind for good in get_all_relevant_goods(scope, user)])),
@@ -275,6 +275,11 @@ if __name__ == '__main__':
                                         }),
               statistics=[StageStatsVisitCount(),
                           UserStatsVisitCount()]),
+
+        Stage(name="ShowingGoodPre",
+              message=SimpleTextMessage("Ваши подарки:"),
+              user_input_actions=[ActionChangeStage("ShowingGood")],
+              is_gatehouse=True),
 
         Stage(name="ShowingGood",
               message=Message(
