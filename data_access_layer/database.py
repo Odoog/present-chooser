@@ -41,7 +41,7 @@ class Database:
             if need_save or query.find('update') != -1 or query.find('insert') != -1 or query.find('delete') != -1:
                 Database._con.commit()
 
-            logging.info('DB answer rows count: '.format(len(answer)))
+            '''logging.info('DB answer rows count: '.format(len(answer)))'''
 
             return answer
         except:

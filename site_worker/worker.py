@@ -41,9 +41,9 @@ class Worker:
             site_blank = f.read().replace("{goods}", content)
         site_id = id_generator()
 
-        site_disk_source = "site_worker/sites/{}.html" if 'platform' in os.environ and os.environ['platform'] == "local" else "/var/www/html/present-chooser/build/{}.html"
+        site_disk_source = "site_worker/sites/{}.html" if 'platform' in os.environ and os.environ['platform'] == "local" else "/var/www/html/build/{}.html"
 
         with open(site_disk_source.format(site_id), 'w', encoding="utf-8") as f:
             f.write(site_blank)
-        logging.info("Build site with id {}".format(site_id))
+        # logging.info("Build site with id {}".format(site_id))
         return site_id

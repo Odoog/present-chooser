@@ -277,7 +277,7 @@ if __name__ == '__main__':
                           UserStatsVisitCount()]),
 
         Stage(name="ShowingGoodPre",
-              message=SimpleTextMessage("Ваши подарки:"),
+              message=SimpleTextMessage("Выбирайте 😇"),
               user_input_actions=[ActionChangeStage("ShowingGood")],
               is_gatehouse=True),
 
@@ -300,6 +300,7 @@ if __name__ == '__main__':
                               actions=[ActionChangeStage("ShowingFinish")])
                       ],
                       is_inline_keyboard=True,
+                      buttons_layout=[2, 1],
                       is_non_keyboard_input_allowed=False),
                   should_replace_last_message=True),
               user_input_actions=
@@ -347,8 +348,9 @@ if __name__ == '__main__':
               message=Message(
                   text=lambda scope, user: MessageText((
                       "Все подарки, которые вам понравились, собраны [здесь]({}) :) Хорошего дня!").format(
-                      "http://2.59.43.130/present-chooser/build/" + worker.build_site(
-                          json.loads(user.get_variable("fav_list"))) + ".html"),
+                      "http://symbol-gift.ru/build/" + worker.build_site(
+                          json.loads(user.get_variable("fav_list"))) + ".html") if len(json.loads(user.get_variable("fav_list"))) > 0
+                                                       else "Жаль, что мы ничего не смогли для вас подобрать 😔",
                       ParseMode.MARKDOWN),
                   keyboard=MessageKeyboard(
                       buttons=[
