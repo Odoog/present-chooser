@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import random
@@ -28,7 +27,7 @@ if __name__ == '__main__':
 
     # --- Helper methods ---
 
-    def get_all_relevant_goods(_, user):
+    def get_all_relevant_goods(scope, user):
         all_goods = sheets.get_all_goods()
         # logging.info("All Goods: " + " ".join([str(good.ind) for good in all_goods]))
         all_goods = list(filter(lambda good: user.get_variable("age") in good.age or good.is_universal == "TRUE", all_goods))
@@ -50,20 +49,20 @@ if __name__ == '__main__':
                                              and (user.get_variable("reason") == "Другой повод" or user.get_variable("reason") is None),
                                 all_goods))
         # logging.info("All Goods reason filter: " + " ".join([str(good.ind) for good in all_goods]))
-        all_goods = sorted(all_goods,key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
+        all_goods = sorted(all_goods, key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
         # logging.info("All Goods sorted: " + " ".join([str(good.ind) + " " + good.category + "\n" for good in all_goods]))
         return all_goods
 
 
-    def sort_goods(_, user):
-        good_id = int(user.get_variable("good_id"))
-        goods = sheets.get_goods(json.loads(user.get_variable("show_list")))
+    def sort_goods(scope, user):
+        good_id = user.get_variable("good_id")
+        goods = sheets.get_goods(user.get_variable("show_list"))
         # Сортируем только те которые пользователь еще не просмотрел
         # logging.info("goods were: " + ",".join([str(good.ind) + " " + good.category + " " + str(sheets.get_good_category_rating(scope, user, good.ind)) + "\n" for good in goods]))
         goods = goods[:good_id] + sorted(goods[good_id:],
                                          key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
         # logging.info("goods are: " + ",".join([str(good.ind) + " " + good.category + " " + str(sheets.get_good_category_rating(scope, user, good.ind)) + "\n" for good in goods]))
-        user.change_variable("show_list", json.dumps([good.ind for good in goods]))
+        user.change_variable("show_list", [good.ind for good in goods])
 
 
     def generate_text_for_current_good(_, user):
@@ -80,7 +79,7 @@ if __name__ == '__main__':
     Stage.set_common_statistics([StageStatsVisitCount()])
     User.set_common_statistics([UserStatsVisitCount()])
 
-    scope = Scope([
+    _scope = Scope([
 
         Stage(name="NewUser",
               user_input_actions=[ActionChangeStage("Opening")]),
@@ -103,7 +102,7 @@ if __name__ == '__main__':
                       ],
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=[ActionChangeStage("AskingForSex"),
-                                  Action(lambda _, user, input_text: sheets.clear_good_rating(scope, user))]),  # Обнуляем рейтинг подарков для пользователя.
+                                  Action(lambda scope, user, input_text: sheets.clear_good_rating(scope, user))]),  # Обнуляем рейтинг подарков для пользователя.
 
         Stage(name="AskingForSex",
               message=Message(
@@ -238,13 +237,13 @@ if __name__ == '__main__':
                                         {
                                             True: [
                                                 ActionChangeStage("ShowingGoodPre"),
-                                                ActionChangeUserVariable("good_id", "0"),
-                                                ActionChangeUserVariable("show_list", lambda _, __: json.dumps([good.ind for good in get_all_relevant_goods(scope, user)])),
-                                                ActionChangeUserVariable("fav_list", "[]"),
-                                                ActionChangeUserVariable("showing_id", lambda _, __: json.loads(user.get_variable("show_list"))[int(user.get_variable("good_id"))])
+                                                ActionChangeUserVariable("good_id", 0),
+                                                ActionChangeUserVariable("show_list", lambda scope, user: [good.ind for good in get_all_relevant_goods(scope, user)]),
+                                                ActionChangeUserVariable("fav_list", []),
+                                                ActionChangeUserVariable("showing_id", lambda _, user: user.get_variable("show_list")[user.get_variable("good_id")])
                                             ],
                                             False: [ActionChangeStage("Opening")]
-                                        }.get(len(get_all_relevant_goods(scope, user)) > 0)),
+                                        }.get(len(get_all_relevant_goods(_scope, user)) > 0)),
 
         Stage(name="ShowingGoodPre",
               message=Message(text="Выбирайте 😇"),
@@ -255,15 +254,12 @@ if __name__ == '__main__':
               message=Message(
                   text=lambda scope, user: generate_text_for_current_good(scope, user),
                   picture=lambda scope, user: MessagePicture(
-                      picture_file_link=sheets.get_good_by_id(int(user.get_variable("showing_id"))).photo_link),
+                      picture_file_link=sheets.get_good_by_id(user.get_variable("showing_id")).photo_link),
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(
                               text="Нравится",
-                              actions=[ActionChangeUserVariable("fav_list", lambda scope, user: json.dumps(
-                                  json.loads(user.get_variable("fav_list")) + [
-                                      json.loads(user.get_variable("show_list"))[
-                                          int(user.get_variable("good_id")) - 1]]))]),
+                              actions=[ActionChangeUserVariable("fav_list", lambda _, user: user.get_variable("fav_list") + [user.get_variable("show_list")[user.get_variable("good_id") - 1]])]),
                           MessageKeyboardButton(text="Не подходит"),
                           MessageKeyboardButton(
                               text="Стоп",
@@ -275,30 +271,26 @@ if __name__ == '__main__':
                   should_replace_last_message=True),
               user_input_actions=lambda scope, user:{
                          True: [
-                             Action(lambda scope, user, input: sheets.change_good_rating(scope, user,
-                                                                                         int(user.get_variable(
-                                                                                             "showing_id")),
-                                                                                         1 if input == "Нравится" else -1)),
+                             Action(lambda scope, user, input: sheets.change_good_rating(scope, user, user.get_variable("showing_id"), 1 if input == "Нравится" else -1)),
                              ActionChangeUserVariable("good_id",
-                                                      lambda scope, user: str(int(user.get_variable("good_id")) + 1)),
+                                                      lambda scope, user: user.get_variable("good_id") + 1),
                              Action(lambda scope, user, text: sort_goods(scope, user)),
                              # Сортируем оствашиеся для показа товары по рейтингу
                              ActionChangeUserVariable("showing_id",
-                                                      lambda scope, user: json.loads(user.get_variable("show_list"))[
-                                                          int(user.get_variable("good_id"))])
+                                                      lambda _, user: user.get_variable("show_list")[user.get_variable("good_id")])
                          ],
                          False: [
                              ActionChangeStage("ShowingLimit")
                          ]
-                     }.get(int(user.get_variable("good_id")) + 1 < len(json.loads(user.get_variable("show_list"))))),
+                     }.get(user.get_variable("good_id") + 1 < len(user.get_variable("show_list")))),
 
         Stage(name="ShowingLimit",
               message=Message(
                   text=lambda scope, user:
                       "Я показал всё, что смог подобрать для вас :)" +
                       "Все подарки, которые вам понравились, собраны [здесь]({}) :) Хорошего дня!".format(
-                          worker.build_site(json.loads(user.get_variable("fav_list")))
-                          if len(json.loads(user.get_variable("fav_list"))) > 0
+                          worker.build_site(user.get_variable("fav_list"))
+                          if len(user.get_variable("fav_list")) > 0
                           else "Жаль, что мы ничего не смогли для вас подобрать 😔"),
                   keyboard=MessageKeyboard(
                       buttons=[
@@ -312,8 +304,8 @@ if __name__ == '__main__':
               message=Message(
                   text=lambda scope, user:
                       "Все подарки, которые вам понравились, собраны [здесь]({}) :) Хорошего дня!".format(
-                          worker.build_site(json.loads(user.get_variable("fav_list"))))
-                      if len(json.loads(user.get_variable("fav_list"))) > 0
+                          worker.build_site(user.get_variable("fav_list")))
+                      if len(user.get_variable("fav_list")) > 0
                       else "Жаль, что мы ничего не смогли для вас подобрать 😔",
                   keyboard=MessageKeyboard(
                       buttons=[
@@ -329,5 +321,5 @@ if __name__ == '__main__':
     worker = Worker(sheets)
     worker.generate_goods_files()
 
-    Bot(os.environ['telegram_token'], scope).start_polling(poll_interval=2,
-                                                           poll_timeout=1)
+    Bot(os.environ['telegram_token'], _scope).start_polling(poll_interval=2,
+                                                            poll_timeout=1)
