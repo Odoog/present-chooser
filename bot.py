@@ -2,7 +2,8 @@ import logging
 from types import SimpleNamespace
 from typing import AnyStr
 
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update, InputMediaPhoto, ReplyKeyboardRemove, ParseMode
+import telegram.error
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update, InputMediaPhoto, ReplyKeyboardRemove
 from telegram.ext import MessageHandler, Filters, Updater, CallbackQueryHandler, CallbackContext
 from telegram.replykeyboardmarkup import ReplyKeyboardMarkup
 
@@ -73,6 +74,7 @@ class Bot:
 
         transition_stage_message = current_user_stage.process_input(update_text, self._scope, user)
         transition_stage_message_text = transition_stage_message.get_text(self._scope, user)
+        transition_stage_message_text_parse_mode = transition_stage_message.get_text_parse_mode(self._scope, user)
         transition_stage_message_keyboard = transition_stage_message.get_keyboard(self._scope, user)
         transition_stage_message_picture = transition_stage_message.get_picture(self._scope, user)
 
@@ -94,12 +96,15 @@ class Bot:
                                                            resize_keyboard=True,
                                                            one_time_keyboard=True)
 
-        if transition_stage_message.should_delete_last_message:
-            context.bot.delete_message(chat_id=user_chat_id,
-                                       message_id=user.get_variable("_last_sent_message_id"))
+        if transition_stage_message.should_delete_last_message(self._scope, user):
+            try:
+                context.bot.delete_message(chat_id=user_chat_id,
+                                           message_id=user.get_variable("_last_sent_message_id"))
+            except telegram.error.BadRequest:  # Если сообщение, которое удаляем "протухло", то игнорируем удаление.
+                pass
 
         if transition_stage_message_picture is not None:
-            if transition_stage_message.should_replace_last_message:
+            if transition_stage_message.should_replace_last_message(self._scope, user):
 
                 try:
                     message = context.bot.edit_message_media(chat_id=user_chat_id,
@@ -112,14 +117,14 @@ class Bot:
 
                     message = context.bot.edit_message_caption(chat_id=user_chat_id,
                                                                message_id=user.get_variable("_last_sent_message_id"),
-                                                               caption=transition_stage_message_text.text,
+                                                               caption=transition_stage_message_text,
                                                                reply_markup=message_reply_markup)
                 except Exception:
                     message = context.bot.send_photo(chat_id=user_chat_id,
                                                      photo=open(transition_stage_message_picture.get_picture_source(),
                                                                 'rb'),
                                                      caption=transition_stage_message_text,
-                                                     parse_mode=ParseMode.HTML,
+                                                     parse_mode=transition_stage_message_text_parse_mode,
                                                      reply_markup=message_reply_markup)
 
             else:
@@ -127,12 +132,12 @@ class Bot:
                                                  photo=open(transition_stage_message_picture.get_picture_source(),
                                                             'rb'),
                                                  caption=transition_stage_message_text,
-                                                 parse_mode=ParseMode.HTML,
+                                                 parse_mode=transition_stage_message_text_parse_mode,
                                                  reply_markup=message_reply_markup)
         else:
             message = context.bot.send_message(chat_id=user_chat_id,
                                                text=transition_stage_message_text,
-                                               parse_mode=ParseMode.HTML,
+                                               parse_mode=transition_stage_message_text_parse_mode,
                                                reply_markup=message_reply_markup)
         user.change_variable("_last_sent_message_id", message.message_id)
 

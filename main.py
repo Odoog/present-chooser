@@ -1,24 +1,16 @@
 import logging
 import os
 import random
-from datetime import datetime
-
 from telegram import ParseMode
-
 from global_transferable_entities.user import User
 from site_worker.worker import Worker
-from state_constructor_parts.action import ActionChangeUserVariable, ActionChangeUserVariableToInput, ActionChangeStage, \
-    Action, \
-    ActionBackToMainStage
+from state_constructor_parts.action import ActionChangeUserVariable, ActionChangeUserVariableToInput, ActionChangeStage, Action
 from bot import Bot
-from state_constructor_parts.filter import IntNumberFilter
-from message_parts.message import Message, MessageText, MessageKeyboard, MessageKeyboardButton, \
-    MessagePicture
+from message_parts.message import Message, MessageKeyboard, MessageKeyboardButton, MessagePicture
 from global_transferable_entities.scope import Scope
 from state_constructor_parts.stage import Stage
 from google_tables import SheetsClient
 from state_constructor_parts.stats import StageStatsVisitCount, UserStatsVisitCount
-from typing_module_extensions.choice import Choice
 
 if __name__ == '__main__':
 
@@ -119,7 +111,7 @@ if __name__ == '__main__':
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=lambda _, user:
               {
-                  "подростку": [ActionChangeStage("AskingForMoney"), ActionChangeUserVariable("spend", [])],
+                  "подростку": [ActionChangeStage("AskingForMoney")],
                   "ребенку": [ActionChangeStage("AskingForAge2")],
                   "взрослому": [ActionChangeStage("AskingForReceiver")]
               }.get(user.get_variable("age"))),
@@ -137,8 +129,7 @@ if __name__ == '__main__':
                               actions=[ActionChangeUserVariable("age2", "8-12 лет")])
                       ],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=[ActionChangeStage("AskingForMoney"),
-                                  ActionChangeUserVariable("spend", [])]),
+              user_input_actions=[ActionChangeStage("AskingForMoney")]),
 
         Stage(name="AskingForReceiver",
               message=Message(
@@ -160,8 +151,7 @@ if __name__ == '__main__':
                       ],
                       buttons_layout=[2, 2],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=[ActionChangeStage("AskingForMoney"),
-                                  ActionChangeUserVariable("spend", [])]),
+              user_input_actions=[ActionChangeStage("AskingForMoney")]),
 
         Stage(name="AskingForMoney",
               message=Message(

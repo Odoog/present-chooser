@@ -8,7 +8,7 @@ from global_transferable_entities.scope import Scope
 from global_transferable_entities.user import User
 from state_constructor_parts.action import Action
 from state_constructor_parts.filter import InputFilter
-from message_parts.message import Message, MessageText
+from message_parts.message import Message
 from state_constructor_parts.stats import Stats
 from typing_module_extensions.instanceOrCallable import InstanceOrCallable
 from typing_module_extensions.choice import Choice

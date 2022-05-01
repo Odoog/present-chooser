@@ -1,27 +1,11 @@
 from __future__ import annotations
-
 import sys
 from typing import List, AnyStr, Optional, Callable, Union
-
 from telegram.parsemode import ParseMode
-
 from typing_module_extensions.instanceOrCallable import InstanceOrCallable
-from typing_module_extensions.choice import Choice
-
 from os.path import exists
-
 import hashlib
-
 import requests
-
-
-class MessageText:
-
-    def __init__(self,
-                 text: AnyStr | Callable[..., AnyStr],
-                 parse_mode: ParseMode = ParseMode.HTML):
-        self.text = InstanceOrCallable(text)
-        self.parse_mode = parse_mode
 
 
 class MessagePicture:
@@ -101,29 +85,38 @@ class Message:
 
     def __init__(self,
                  text: Optional[AnyStr | Callable[..., AnyStr]] = None,
+                 text_parse_mode: ParseMode | Callable[..., ParseMode] = ParseMode.HTML,
                  picture: Optional[MessagePicture | Callable[..., MessagePicture]] = None,
                  keyboard: Optional[MessageKeyboard | Callable[..., MessageKeyboard]] = None,
-                 should_replace_last_message: bool = False,
-                 should_delete_last_message: bool = False,
-                 text_processor_method: Callable[..., Optional[MessageText]] = lambda text: text):  # Функция, применяемая нвд динамическим текстом после его рендера.
+                 should_replace_last_message: bool | Callable[..., bool] = False,
+                 should_delete_last_message: bool | Callable[..., bool] = False,
+                 text_processor_method: Callable[..., Optional[AnyStr]] | Callable[..., Callable[..., Optional[AnyStr]]] = lambda text: text):  # Функция, применяемая нвд динамическим текстом после его рендера.
         self._text = InstanceOrCallable(text)
+        self._text_parse_mode = InstanceOrCallable(text_parse_mode)
         self._picture = InstanceOrCallable(picture)
         self._keyboard = InstanceOrCallable(keyboard)
-        self.should_replace_last_message = should_replace_last_message
-        self.should_delete_last_message = should_delete_last_message
-        self._text_processor_method = text_processor_method
+        self._should_replace_last_message = InstanceOrCallable(should_replace_last_message)
+        self._should_delete_last_message = InstanceOrCallable(should_delete_last_message)
+        self._text_processor_method = InstanceOrCallable(text_processor_method)
 
     def get_text(self,
                  scope: 'Scope',
                  user: 'User') -> Optional[AnyStr]:
-        return self._get_text_processor_method()(self._text.get(scope, user))
+        return self._get_text_processor_method(scope, user)(self._text.get(scope, user))
 
-    def _get_text_processor_method(self) -> Callable[..., Optional[AnyStr]]:
-        return self._text_processor_method
+    def get_text_parse_mode(self,
+                            scope: 'Scope',
+                            user: 'User') -> ParseMode:
+        return self._text_parse_mode.get(scope, user)
+
+    def _get_text_processor_method(self,
+                                   scope: 'Scope',
+                                   user: 'User') -> Callable[..., Optional[AnyStr]]:
+        return self._text_processor_method.get(scope, user)
 
     def set_onetime_text_processor_method(self,
-                                          text_processor_method: Callable[..., Optional[AnyStr]]):
-        self._text_processor_method = text_processor_method
+                                          text_processor_method: Callable[..., Optional[AnyStr]] | Callable[..., Callable[..., Optional[AnyStr]]]):
+        self._text_processor_method = InstanceOrCallable(text_processor_method)
 
     def get_picture(self,
                     scope: 'Scope',
@@ -134,3 +127,13 @@ class Message:
                      scope: 'Scope',
                      user: 'User') -> Optional[MessageKeyboard]:
         return self._keyboard.get(scope, user)
+    
+    def should_delete_last_message(self,
+                                   scope: 'Scope',
+                                   user: 'User') -> bool:
+        return self._should_delete_last_message.get(scope, user)
+
+    def should_replace_last_message(self,
+                                   scope: 'Scope',
+                                   user: 'User') -> bool:
+        return self._should_replace_last_message.get(scope, user)
