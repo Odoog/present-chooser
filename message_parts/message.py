@@ -2,7 +2,7 @@ from __future__ import annotations
 import sys
 from typing import List, AnyStr, Optional, Callable, Union
 from telegram.parsemode import ParseMode
-from typing_module_extensions.instanceOrCallable import InstanceOrCallable
+from typing_module_extensions.instance_or_callable import InstanceOrCallable
 from os.path import exists
 import hashlib
 import requests

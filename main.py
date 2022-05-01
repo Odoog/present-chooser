@@ -1,7 +1,6 @@
 import logging
 import os
 import random
-from telegram import ParseMode
 from global_transferable_entities.user import User
 from site_worker.worker import Worker
 from state_constructor_parts.action import ActionChangeUserVariable, ActionChangeUserVariableToInput, ActionChangeStage, Action
@@ -10,7 +9,9 @@ from message_parts.message import Message, MessageKeyboard, MessageKeyboardButto
 from global_transferable_entities.scope import Scope
 from state_constructor_parts.stage import Stage
 from google_tables import SheetsClient
-from state_constructor_parts.stats import StageStatsVisitCount, UserStatsVisitCount
+from statistics_entities.custom_stats import UserStatsCyclesFinishCount, UserStatsCyclesStartCount
+from statistics_entities.stage_stats import StageStatsVisitCount
+from statistics_entities.user_stats import UserStatsVisitCount, UserStatsCurrentStage
 
 if __name__ == '__main__':
 
@@ -69,7 +70,8 @@ if __name__ == '__main__':
     # --- State constructor ---
 
     Stage.set_common_statistics([StageStatsVisitCount()])
-    User.set_common_statistics([UserStatsVisitCount()])
+    User.set_common_statistics([UserStatsVisitCount(),
+                                UserStatsCurrentStage()])
 
     _scope = Scope([
 
@@ -94,7 +96,8 @@ if __name__ == '__main__':
                       ],
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=[ActionChangeStage("AskingForSex"),
-                                  Action(lambda scope, user, input_text: sheets.clear_good_rating(scope, user))]),  # Обнуляем рейтинг подарков для пользователя.
+                                  Action(lambda scope, user, input_text: sheets.clear_good_rating(scope, user))],  # Обнуляем рейтинг подарков для пользователя.
+              statistics=[UserStatsCyclesStartCount()]),
 
         Stage(name="AskingForSex",
               message=Message(
@@ -127,7 +130,7 @@ if __name__ == '__main__':
                           MessageKeyboardButton(
                               text="8-12 лет",
                               actions=[ActionChangeUserVariable("age2", "8-12 лет")])
-                      ],
+                          ],
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=[ActionChangeStage("AskingForMoney")]),
 
@@ -303,7 +306,8 @@ if __name__ == '__main__':
                                                 actions=[ActionChangeStage("Opening")])
                       ],
                       is_non_keyboard_input_allowed=False),
-                  should_delete_last_message=True))
+                  should_delete_last_message=True),
+              statistics=[UserStatsCyclesFinishCount()])
 
     ], main_stage_name="MainMenu")
 

@@ -69,6 +69,7 @@ class Bot:
         # Statistics
 
         current_user_stage.count_statistics(update_text, self._scope, user, current_user_stage)
+        user.count_statistics(update_text, self._scope, user, current_user_stage)
 
         # Reply message
 
@@ -154,6 +155,5 @@ class Bot:
             user.delete()
             return True
         if text == "/start":
-            user.change_stage(
-                "NewUser")  # Команда start принудительно обновляет этап юзера но продолжает исполнение, эмулируя удаление пользователя.
+            user.change_stage("NewUser")  # Команда start принудительно обновляет этап юзера но продолжает исполнение, эмулируя удаление пользователя.
         return False

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import itertools
-import logging
 from typing import List, AnyStr, Optional, Callable
 
 from global_transferable_entities.scope import Scope
@@ -9,9 +8,8 @@ from global_transferable_entities.user import User
 from state_constructor_parts.action import Action
 from state_constructor_parts.filter import InputFilter
 from message_parts.message import Message
-from state_constructor_parts.stats import Stats
-from typing_module_extensions.instanceOrCallable import InstanceOrCallable
-from typing_module_extensions.choice import Choice
+from statistics_entities.stats import Stats
+from typing_module_extensions.instance_or_callable import InstanceOrCallable
 
 
 class Stage:
@@ -63,7 +61,7 @@ class Stage:
     def _get_statistics(self,
                        scope: Scope,
                        user: User) -> Optional[List[Stats]]:
-        return Stage._common_statistics or [] + self._statistics or []
+        return (Stage._common_statistics or []) + (self._statistics or [])
 
     def get_user_input_filter(self,
                               scope: Scope,

@@ -1,7 +1,6 @@
 from typing import List, AnyStr, Dict, Any, Optional
-
 from data_access_layer.database import Database
-from state_constructor_parts.stats import Stats
+from statistics_entities.stats import Stats
 
 
 class User:
@@ -11,7 +10,7 @@ class User:
 
     @staticmethod
     def set_common_statistics(statistics: List[Stats]):
-        _common_statistics = statistics
+        User._common_statistics = statistics
 
     def __init__(self,
                  chat_id: AnyStr):
@@ -63,7 +62,7 @@ class User:
         Database.delete_user(self.chat_id)
 
     def _get_statistics(self, scope, user):
-        return self._common_statistics
+        return User._common_statistics or []
 
     def count_statistics(self,
                          input_string: AnyStr,
