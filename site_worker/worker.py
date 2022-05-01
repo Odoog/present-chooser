@@ -39,11 +39,12 @@ class Worker:
                 content += f.read()
         with open('site_worker/ex.html', 'r', encoding="utf-8") as f:
             site_blank = f.read().replace("{goods}", content)
-        site_id = id_generator()
+        site_id = id_generator(size=4,
+                               chars=string.ascii_lowercase)
 
-        site_disk_source = "site_worker/sites/{}.html" if 'platform' in os.environ and os.environ['platform'] == "local" else "/var/www/html/build/{}.html"
+        site_disk_source = "site_worker/sites/{}.html" if 'platform' in os.environ and os.environ['platform'] == "local" else "/var/www/html/symbol-gift.ru/{}.html".format(site_id)
 
         with open(site_disk_source.format(site_id), 'w', encoding="utf-8") as f:
             f.write(site_blank)
-        # logging.info("Build site with id {}".format(site_id))
-        return site_id
+        logging.info("Build site with id {}".format(site_id))
+        return "https://symbol-gift.ru/{}".format(site_id)

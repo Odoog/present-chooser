@@ -25,14 +25,29 @@ class Stats:
              user: 'User',
              stage: 'Stage',
              input_string: Optional[AnyStr] = None):
-        stat_object = self._stat_object_getter_function(scope, user, stage)
-
-        metric_value = self._value_getter_function(stat_object, scope, user, stage, self._metric_name,
+        stat_object = self._stat_object_getter_function(scope,
+                                                        user,
+                                                        stage)
+        metric_value = self._value_getter_function(stat_object,
+                                                   scope,
+                                                   user,
+                                                   stage,
+                                                   self._metric_name,
                                                    self._metric_value)
-        metric_value = self._metric_function(scope, user, stage, metric_value)
-        self._value_setter_function(stat_object, scope, user, stage, self._metric_name, metric_value)
-
-        self._stat_object_setter_function(scope, user, stage, stat_object)
+        metric_value = self._metric_function(scope,
+                                             user,
+                                             stage,
+                                             metric_value)
+        self._value_setter_function(stat_object,
+                                    scope,
+                                    user,
+                                    stage,
+                                    self._metric_name,
+                                    metric_value)
+        self._stat_object_setter_function(scope,
+                                          user,
+                                          stage,
+                                          stat_object)
 
 
 def stage_value_getter_function(stat_object,

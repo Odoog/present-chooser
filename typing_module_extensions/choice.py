@@ -4,7 +4,7 @@ from typing import Callable, TypeVar, Dict, Any, Generic, TYPE_CHECKING, Type
 OptionalOutputClass = TypeVar('OptionalOutputClass')
 ConditionOutputClass = TypeVar('ConditionOutputClass')
 
-
+# TODO: Разобраться в необходимости
 class Choice(Generic[OptionalOutputClass]):
     def __init__(self,
                  function: 'Callable[[Scope, User], ConditionOutputClass]',

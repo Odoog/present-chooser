@@ -6,13 +6,14 @@ from datetime import datetime
 
 from telegram import ParseMode
 
+from global_transferable_entities.user import User
 from site_worker.worker import Worker
 from state_constructor_parts.action import ActionChangeUserVariable, ActionChangeUserVariableToInput, ActionChangeStage, \
     Action, \
     ActionBackToMainStage
 from bot import Bot
 from state_constructor_parts.filter import IntNumberFilter
-from message_parts.message import Message, MessageText, SimpleTextMessage, MessageKeyboard, MessageKeyboardButton, \
+from message_parts.message import Message, MessageText, MessageKeyboard, MessageKeyboardButton, \
     MessagePicture
 from global_transferable_entities.scope import Scope
 from state_constructor_parts.stage import Stage
@@ -21,63 +22,51 @@ from state_constructor_parts.stats import StageStatsVisitCount, UserStatsVisitCo
 from typing_module_extensions.choice import Choice
 
 if __name__ == '__main__':
+
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
     logging.info("Program started")
 
+    # --- Helper methods ---
 
-    # Example of using state constructor to create a bot.
-
-    def get_all_relevant_goods(scope, user):
+    def get_all_relevant_goods(_, user):
         all_goods = sheets.get_all_goods()
-        logging.info("All Goods: " + " ".join([str(good.ind) for good in all_goods]))
-        all_goods = list(
-            filter(lambda good: user.get_variable("age") in good.age or good.is_universal == "TRUE", all_goods))
-        logging.info("All Goods age filter: " + " ".join([str(good.ind) for good in all_goods]))
-        all_goods = list(
-            filter(lambda good: user.get_variable("sex") in good.sex or good.is_universal == "TRUE", all_goods))
-        logging.info("All Goods sex filter: " + " ".join([str(good.ind) for good in all_goods]))
-        all_goods = list(filter(lambda good: int(user.get_variable("spend").split('-')[0]) <= int(
-            "".join(filter(str.isdigit, good.price_actual))) <= int(user.get_variable("spend").split('-')[1]),
+        # logging.info("All Goods: " + " ".join([str(good.ind) for good in all_goods]))
+        all_goods = list(filter(lambda good: user.get_variable("age") in good.age or good.is_universal == "TRUE", all_goods))
+        # logging.info("All Goods age filter: " + " ".join([str(good.ind) for good in all_goods]))
+        all_goods = list(filter(lambda good: user.get_variable("sex") in good.sex or good.is_universal == "TRUE", all_goods))
+        # logging.info("All Goods sex filter: " + " ".join([str(good.ind) for good in all_goods]))
+        all_goods = list(filter(lambda good: int(user.get_variable("spend").split('-')[0])
+                                             <= int("".join(filter(str.isdigit, good.price_actual)))
+                                             <= int(user.get_variable("spend").split('-')[1]),
                                 all_goods))
-        logging.info("All Goods spend filter: " + " ".join([str(good.ind) for good in all_goods]))
+        # logging.info("All Goods spend filter: " + " ".join([str(good.ind) for good in all_goods]))
         if user.get_variable("age") == "ребенку":
-            all_goods = list(
-                filter(lambda good: user.get_variable("age2") in good.age2 or good.is_universal == "TRUE", all_goods))
-            logging.info("All Goods age2 filter: " + "".join([str(good.ind) for good in all_goods]))
+            all_goods = list(filter(lambda good: user.get_variable("age2") in good.age2 or good.is_universal == "TRUE", all_goods))
+            # logging.info("All Goods age2 filter: " + "".join([str(good.ind) for good in all_goods]))
         if user.get_variable("age") == "взрослому":
-            all_goods = list(
-                filter(lambda good: user.get_variable("receiver") in good.receiver or good.is_universal == "TRUE",
-                       all_goods))
-            logging.info("All Goods adult filter: " + " ".join([str(good.ind) for good in all_goods]))
-        all_goods = list(
-            filter(lambda good: user.get_variable("reason") in good.reason or
-                                good.is_universal_reason == "TRUE" and (
-                                        user.get_variable("reason") == "Другой повод" or user.get_variable(
-                                    "reason") is None),
-                   all_goods))
-        logging.info("All Goods reason filter: " + " ".join([str(good.ind) for good in all_goods]))
-
-        all_goods = sorted(all_goods,
-                           key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
-
-        logging.info(
-            "All Goods sorted: " + " ".join([str(good.ind) + " " + good.category + "\n" for good in all_goods]))
-
+            all_goods = list(filter(lambda good: user.get_variable("receiver") in good.receiver or good.is_universal == "TRUE",all_goods))
+            # logging.info("All Goods adult filter: " + " ".join([str(good.ind) for good in all_goods]))
+        all_goods = list(filter(lambda good: user.get_variable("reason") in good.reason or good.is_universal_reason == "TRUE"
+                                             and (user.get_variable("reason") == "Другой повод" or user.get_variable("reason") is None),
+                                all_goods))
+        # logging.info("All Goods reason filter: " + " ".join([str(good.ind) for good in all_goods]))
+        all_goods = sorted(all_goods,key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
+        # logging.info("All Goods sorted: " + " ".join([str(good.ind) + " " + good.category + "\n" for good in all_goods]))
         return all_goods
 
 
-    def sort_goods(scope, user):
+    def sort_goods(_, user):
         good_id = int(user.get_variable("good_id"))
         goods = sheets.get_goods(json.loads(user.get_variable("show_list")))
         # Сортируем только те которые пользователь еще не просмотрел
-        logging.info("goods were: " + ",".join([str(good.ind) + " " + good.category + " " + str(sheets.get_good_category_rating(scope, user, good.ind)) + "\n" for good in goods]))
-        goods = goods[:good_id] + sorted(goods[good_id:], key=lambda good: (
-            -sheets.get_good_category_rating(scope, user, good.ind), random.random()))
-        logging.info("goods are: " + ",".join([str(good.ind) + " " + good.category + " " + str(sheets.get_good_category_rating(scope, user, good.ind)) + "\n" for good in goods]))
+        # logging.info("goods were: " + ",".join([str(good.ind) + " " + good.category + " " + str(sheets.get_good_category_rating(scope, user, good.ind)) + "\n" for good in goods]))
+        goods = goods[:good_id] + sorted(goods[good_id:],
+                                         key=lambda good: (-sheets.get_good_category_rating(scope, user, good.ind), random.random()))
+        # logging.info("goods are: " + ",".join([str(good.ind) + " " + good.category + " " + str(sheets.get_good_category_rating(scope, user, good.ind)) + "\n" for good in goods]))
         user.change_variable("show_list", json.dumps([good.ind for good in goods]))
 
 
-    def generate_text_for_current_good(scope, user):
+    def generate_text_for_current_good(_, user):
         good = sheets.get_good_by_id(int(user.get_variable("showing_id")))
         return "{} / {} {}\nМагазин: {}\nЦена: {}₽".format(
             good.name,
@@ -86,6 +75,10 @@ if __name__ == '__main__':
             good.shop,
             good.price_actual)
 
+    # --- State constructor ---
+
+    Stage.set_common_statistics([StageStatsVisitCount()])
+    User.set_common_statistics([UserStatsVisitCount()])
 
     scope = Scope([
 
@@ -94,9 +87,8 @@ if __name__ == '__main__':
 
         Stage(name="Opening",
               message=Message(
-                  text=MessageText(
-                      "Привет! Я бот из компании Symbol, моя работа — помогать людям выбирать классные подарки. \n\n"
-                      "Кому вы ищете подарок?"),
+                  text="Привет! Я бот из компании Symbol, моя работа — помогать людям выбирать классные подарки. \n\n"
+                       "Кому вы ищете подарок?",
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(
@@ -111,39 +103,31 @@ if __name__ == '__main__':
                       ],
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=[ActionChangeStage("AskingForSex"),
-                                  Action(lambda scope, user, input_text: sheets.clear_good_rating(scope, user))],
-              # Обнуляем рейтинг подарков для пользователя.
-              statistics=[StageStatsVisitCount(),
-                          UserStatsVisitCount()]),
+                                  Action(lambda _, user, input_text: sheets.clear_good_rating(scope, user))]),  # Обнуляем рейтинг подарков для пользователя.
 
         Stage(name="AskingForSex",
               message=Message(
-                  text=MessageText("Выберите пол"),
+                  text="Выберите пол",
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(
-                              text=lambda scope, user: "Мужчине" if user.get_variable(
-                                  "age") == "взрослому" else "Мальчику",
+                              text=lambda _, user: "Мужчине" if user.get_variable("age") == "взрослому" else "Мальчику",
                               actions=[ActionChangeUserVariable("sex", "мальчику")]),
                           MessageKeyboardButton(
-                              text=lambda scope, user: "Женщине" if user.get_variable(
-                                  "age") == "взрослому" else "Девочке",
+                              text=lambda _, user: "Женщине" if user.get_variable("age") == "взрослому" else "Девочке",
                               actions=[ActionChangeUserVariable("sex", "девочке")])
                       ],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=Choice(
-                  lambda scope, user: user.get_variable("age"),
-                  {
-                      "подростку": [ActionChangeStage("AskingForMoney"), ActionChangeUserVariable("spend", [])],
-                      "ребенку": [ActionChangeStage("AskingForAge2")],
-                      "взрослому": [ActionChangeStage("AskingForReceiver")]
-                  }),
-              statistics=[StageStatsVisitCount(),
-                          UserStatsVisitCount()]),
+              user_input_actions=lambda _, user:
+              {
+                  "подростку": [ActionChangeStage("AskingForMoney"), ActionChangeUserVariable("spend", [])],
+                  "ребенку": [ActionChangeStage("AskingForAge2")],
+                  "взрослому": [ActionChangeStage("AskingForReceiver")]
+              }.get(user.get_variable("age"))),
 
         Stage(name="AskingForAge2",
               message=Message(
-                  text=MessageText("Выберите возраст"),
+                  text="Выберите возраст",
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(
@@ -154,13 +138,12 @@ if __name__ == '__main__':
                               actions=[ActionChangeUserVariable("age2", "8-12 лет")])
                       ],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=[ActionChangeStage("AskingForMoney"), ActionChangeUserVariable("spend", [])],
-              statistics=[StageStatsVisitCount(),
-                          UserStatsVisitCount()]),
+              user_input_actions=[ActionChangeStage("AskingForMoney"),
+                                  ActionChangeUserVariable("spend", [])]),
 
         Stage(name="AskingForReceiver",
               message=Message(
-                  text=MessageText("Выберите получателя"),
+                  text="Выберите получателя",
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(
@@ -178,13 +161,12 @@ if __name__ == '__main__':
                       ],
                       buttons_layout=[2, 2],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=[ActionChangeStage("AskingForMoney"), ActionChangeUserVariable("spend", [])],
-              statistics=[StageStatsVisitCount(),
-                          UserStatsVisitCount()]),
+              user_input_actions=[ActionChangeStage("AskingForMoney"),
+                                  ActionChangeUserVariable("spend", [])]),
 
         Stage(name="AskingForMoney",
               message=Message(
-                  text=MessageText("Сколько готовы потратить?"),
+                  text="Сколько готовы потратить?",
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(
@@ -199,18 +181,14 @@ if __name__ == '__main__':
                       ],
                       buttons_layout=[2, 2, 1],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=Choice(
-                  lambda scope, user: user.get_variable("receiver"),
+              user_input_actions=lambda _, user:
                   {
                       "Себе": [ActionChangeStage("ReadyToShow")],
-                      "_": [ActionChangeStage("AskingForReason")],
-                  }),
-              statistics=[StageStatsVisitCount(),
-                          UserStatsVisitCount()]),
+                  }.get(user.get_variable("receiver"), [ActionChangeStage("AskingForReason")])),
 
         Stage(name="AskingForReason",
               message=Message(
-                  text=MessageText("Хотите указать повод для подарка?"),
+                  text="Хотите указать повод для подарка?",
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(
@@ -221,13 +199,11 @@ if __name__ == '__main__':
                               actions=[ActionChangeUserVariable("reason", None),
                                        ActionChangeStage("ReadyToShow")]),
                       ],
-                      is_non_keyboard_input_allowed=False)),
-              statistics=[StageStatsVisitCount(),
-                          UserStatsVisitCount()]),
+                      is_non_keyboard_input_allowed=False))),
 
         Stage(name="AskingForReason2",
               message=Message(
-                  text=MessageText("Выберите повод для подарка?"),
+                  text="Выберите повод для подарка?",
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(text="8 Марта"),
@@ -242,48 +218,42 @@ if __name__ == '__main__':
                       buttons_layout=[2, 2, 2, 2],
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=[ActionChangeUserVariableToInput("reason"),
-                                  ActionChangeStage("ReadyToShow")],
-              statistics=[StageStatsVisitCount(),
-                          UserStatsVisitCount()]),
+                                  ActionChangeStage("ReadyToShow")]),
 
         Stage(name="ReadyToShow",
               message=Message(
-                  text=lambda scope, user: MessageText(
+                  text=lambda scope, user:
                       "Отлично! У меня для вас много интересных варинтов — выбирайте :) \n\nЗапоминать "
                       "ничего не нужно — когда вы нажмете \"Стоп\", я покажу вам все подарки, который вам"
-                      " понравились.") if len(get_all_relevant_goods(scope, user)) > 0 else
-                  MessageText("Подарков, подходящих под ваши критерии, пока нет :( "
-                              "\nПопробуйте изменить параметры — например, бюджет"),
+                      " понравились."
+                      if len(get_all_relevant_goods(scope, user)) > 0 else
+                      "Подарков, подходящих под ваши критерии, пока нет :( "
+                      "\nПопробуйте изменить параметры — например, бюджет",
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(text="Хорошо")
                       ],
                       is_non_keyboard_input_allowed=False)),
-              user_input_actions=Choice(lambda scope, user: len(get_all_relevant_goods(scope, user)) > 0,
+              user_input_actions=lambda _, user:
                                         {
                                             True: [
                                                 ActionChangeStage("ShowingGoodPre"),
                                                 ActionChangeUserVariable("good_id", "0"),
-                                                ActionChangeUserVariable("show_list", lambda scope, user: json.dumps(
-                                                    [good.ind for good in get_all_relevant_goods(scope, user)])),
+                                                ActionChangeUserVariable("show_list", lambda _, __: json.dumps([good.ind for good in get_all_relevant_goods(scope, user)])),
                                                 ActionChangeUserVariable("fav_list", "[]"),
-                                                ActionChangeUserVariable("showing_id", lambda scope, user:
-                                                json.loads(user.get_variable("show_list"))[
-                                                    int(user.get_variable("good_id"))])
+                                                ActionChangeUserVariable("showing_id", lambda _, __: json.loads(user.get_variable("show_list"))[int(user.get_variable("good_id"))])
                                             ],
                                             False: [ActionChangeStage("Opening")]
-                                        }),
-              statistics=[StageStatsVisitCount(),
-                          UserStatsVisitCount()]),
+                                        }.get(len(get_all_relevant_goods(scope, user)) > 0)),
 
         Stage(name="ShowingGoodPre",
-              message=SimpleTextMessage("Выбирайте 😇"),
+              message=Message(text="Выбирайте 😇"),
               user_input_actions=[ActionChangeStage("ShowingGood")],
               is_gatehouse=True),
 
         Stage(name="ShowingGood",
               message=Message(
-                  text=lambda scope, user: MessageText(generate_text_for_current_good(scope, user)),
+                  text=lambda scope, user: generate_text_for_current_good(scope, user),
                   picture=lambda scope, user: MessagePicture(
                       picture_file_link=sheets.get_good_by_id(int(user.get_variable("showing_id"))).photo_link),
                   keyboard=MessageKeyboard(
@@ -291,9 +261,9 @@ if __name__ == '__main__':
                           MessageKeyboardButton(
                               text="Нравится",
                               actions=[ActionChangeUserVariable("fav_list", lambda scope, user: json.dumps(
-                                           json.loads(user.get_variable("fav_list")) + [
-                                               json.loads(user.get_variable("show_list"))[
-                                                   int(user.get_variable("good_id")) - 1]]))]),
+                                  json.loads(user.get_variable("fav_list")) + [
+                                      json.loads(user.get_variable("show_list"))[
+                                          int(user.get_variable("good_id")) - 1]]))]),
                           MessageKeyboardButton(text="Не подходит"),
                           MessageKeyboardButton(
                               text="Стоп",
@@ -303,10 +273,7 @@ if __name__ == '__main__':
                       buttons_layout=[2, 1],
                       is_non_keyboard_input_allowed=False),
                   should_replace_last_message=True),
-              user_input_actions=
-              Choice(lambda scope, user: int(user.get_variable("good_id")) + 1 < len(
-                  json.loads(user.get_variable("show_list"))),
-                     {
+              user_input_actions=lambda scope, user:{
                          True: [
                              Action(lambda scope, user, input: sheets.change_good_rating(scope, user,
                                                                                          int(user.get_variable(
@@ -323,44 +290,38 @@ if __name__ == '__main__':
                          False: [
                              ActionChangeStage("ShowingLimit")
                          ]
-                     }),
-              statistics=[StageStatsVisitCount(),
-                          UserStatsVisitCount()]),
+                     }.get(int(user.get_variable("good_id")) + 1 < len(json.loads(user.get_variable("show_list"))))),
 
         Stage(name="ShowingLimit",
               message=Message(
-                  text=lambda scope, user: MessageText((
-                      "Я показал всё, что смог подобрать для вас :) \n\nВсе подарки, которые вам понравились, собраны [здесь]({})").format(
-                      "http://2.59.43.130/present-chooser/build/" + worker.build_site(
-                          json.loads(user.get_variable("fav_list"))) + ".html"),
-                      ParseMode.MARKDOWN),
+                  text=lambda scope, user:
+                      "Я показал всё, что смог подобрать для вас :)" +
+                      "Все подарки, которые вам понравились, собраны [здесь]({}) :) Хорошего дня!".format(
+                          worker.build_site(json.loads(user.get_variable("fav_list")))
+                          if len(json.loads(user.get_variable("fav_list"))) > 0
+                          else "Жаль, что мы ничего не смогли для вас подобрать 😔"),
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(text="Выбрать еще один подарок",
                                                 actions=[ActionChangeStage("Opening")])
                       ],
                       is_non_keyboard_input_allowed=False),
-                  should_delete_last_message=True),
-              statistics=[StageStatsVisitCount(),
-                          UserStatsVisitCount()]),
+                  should_delete_last_message=True)),
 
         Stage(name="ShowingFinish",
               message=Message(
-                  text=lambda scope, user: MessageText((
-                      "Все подарки, которые вам понравились, собраны [здесь]({}) :) Хорошего дня!").format(
-                      "http://symbol-gift.ru/build/" + worker.build_site(
-                          json.loads(user.get_variable("fav_list"))) + ".html") if len(json.loads(user.get_variable("fav_list"))) > 0
-                                                       else "Жаль, что мы ничего не смогли для вас подобрать 😔",
-                      ParseMode.MARKDOWN),
+                  text=lambda scope, user:
+                      "Все подарки, которые вам понравились, собраны [здесь]({}) :) Хорошего дня!".format(
+                          worker.build_site(json.loads(user.get_variable("fav_list"))))
+                      if len(json.loads(user.get_variable("fav_list"))) > 0
+                      else "Жаль, что мы ничего не смогли для вас подобрать 😔",
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(text="Выбрать еще один подарок",
                                                 actions=[ActionChangeStage("Opening")])
                       ],
                       is_non_keyboard_input_allowed=False),
-                  should_delete_last_message=True),
-              statistics=[StageStatsVisitCount(),
-                          UserStatsVisitCount()])
+                  should_delete_last_message=True))
 
     ], main_stage_name="MainMenu")
 

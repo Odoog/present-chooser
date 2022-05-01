@@ -2,36 +2,42 @@ from __future__ import annotations
 
 import itertools
 import logging
-from typing import List, AnyStr, Optional
+from typing import List, AnyStr, Optional, Callable
 
 from global_transferable_entities.scope import Scope
 from global_transferable_entities.user import User
 from state_constructor_parts.action import Action
 from state_constructor_parts.filter import InputFilter
-from message_parts.message import Message, SimpleTextMessage, MessageText
+from message_parts.message import Message, MessageText
 from state_constructor_parts.stats import Stats
+from typing_module_extensions.instanceOrCallable import InstanceOrCallable
 from typing_module_extensions.choice import Choice
 
 
 class Stage:
+    _common_statistics: Optional[List[Stats]]  # Статистика, подсчет которой ведется для всех этапов.
+
+    @staticmethod
+    def set_common_statistics(statistics: List[Stats]):
+        Stage._common_statistics = statistics
 
     def __init__(self,
                  name: AnyStr,
-                 message: Optional[Message | Choice[Message]] = None,
-                 prerequisite_actions: Optional[List[Action]] = None,
-                 user_input_actions: Optional[List[Action] | Choice[List[Action]]] = None,
-                 user_input_filter: Optional[InputFilter | Choice[InputFilter]] = None,
+                 message: Optional[Message | Callable[..., Message]] = None,
+                 prerequisite_actions: Optional[List[Action] | Callable[..., List[Action]]] = None,
+                 user_input_actions: Optional[List[Action] | Callable[..., List[Action]]] = None,
+                 user_input_filter: Optional[InputFilter | Callable[..., InputFilter]] = None,
                  statistics: Optional[List[Stats]] = None,
-                 is_gatehouse: bool = False): # TODO: Автоматическое определение IsGatehouse в зависимости от прикрепленных actions.
+                 is_gatehouse: bool = False):  # TODO: Автоматическое определение IsGatehouse в зависимости от прикрепленных actions.
         self._name = name
-        self._message = message
-        self._prerequisite_actions = prerequisite_actions
-        self._user_input_actions = user_input_actions
-        self._user_input_filter = user_input_filter
+        self._message = InstanceOrCallable(message)
+        self._prerequisite_actions = InstanceOrCallable(prerequisite_actions)
+        self._user_input_actions = InstanceOrCallable(user_input_actions)
+        self._user_input_filter = InstanceOrCallable(user_input_filter)
         self._statistics = statistics
         self._is_gatehouse = is_gatehouse
 
-        logging.info("Stage with name {} created".format(self._name))
+        # logging.info("Stage with name {} created".format(self._name))
 
     def is_gatehouse(self) -> bool:
         return self._is_gatehouse
@@ -42,51 +48,42 @@ class Stage:
     def get_message(self,
                     scope: Scope,
                     user: User) -> Optional[Message]:
-        if isinstance(self._message, Choice):
-            return self._message.get(scope, user)
-        elif isinstance(self._message, Message):
-            return self._message
+        return self._message.get(scope, user)
 
     def get_prerequisite_actions(self,
                                  scope: Scope,
                                  user: User) -> List[Action]:
-        return self._prerequisite_actions or []
+        return self._prerequisite_actions.get(scope, user) or []
 
     def get_user_input_actions(self,
                                scope: Scope,
                                user: User) -> Optional[List[Action]]:
-        if isinstance(self._user_input_actions, Choice):
-            return self._user_input_actions.get(scope, user)
-        elif isinstance(self._user_input_actions, List):
-            return self._user_input_actions
-        return None
+        return self._user_input_actions.get(scope, user)
 
-    def get_statistics(self,
+    def _get_statistics(self,
                        scope: Scope,
                        user: User) -> Optional[List[Stats]]:
-        return self._statistics
+        return Stage._common_statistics or [] + self._statistics or []
 
     def get_user_input_filter(self,
                               scope: Scope,
                               user: User) -> Optional[InputFilter]:
-        if isinstance(self._user_input_filter, Choice):
-            return self._user_input_filter.get(scope, user)
-        elif isinstance(self._user_input_filter, InputFilter):
-            return self._user_input_filter
+        return self._user_input_filter.get(scope, user)
 
     def is_allowed_input(self,
                          input_string: AnyStr,
                          scope: Scope,
                          user: User) -> bool:
-        if self._user_input_filter is not None:
-            if not self._user_input_filter.is_allowed_input(input_string):
+        if input_filter := self.get_user_input_filter(scope, user) is not None:
+            if not input_filter.is_allowed_input(input_string):
                 return False
 
         if message := self.get_message(scope, user):
             if keyboard := message.get_keyboard(scope, user):
                 if not keyboard.is_non_keyboard_input_allowed:
                     keyboard_buttons_strings = \
-                        [button.get_text(scope, user) for button in list(itertools.chain(*keyboard.get_buttons(scope, user)))]
+                        [button.get_text(scope, user) for button in
+                         list(itertools.chain(*keyboard.get_buttons(scope, user)))]
                     if input_string not in keyboard_buttons_strings:
                         return False
         return True
@@ -96,7 +93,7 @@ class Stage:
                          scope: Scope,
                          user: User,
                          stage: Stage):
-        if statistics := self.get_statistics(scope, user):
+        if statistics := self._get_statistics(scope, user):
             for statistic in statistics:
                 statistic.step(scope, user, stage, input_string)
 
@@ -108,7 +105,7 @@ class Stage:
         if not self.is_allowed_input(input_string, scope, user):
             transition_user_stage = scope.get_stage(user.get_current_stage_name())
             transition_user_message = transition_user_stage.get_message(scope, user)
-            transition_user_message.set_onetime_text_processor_method(lambda text: MessageText("Выберите один из вариантов и нажмите.\n\n" + text.text))
+            transition_user_message.set_onetime_text_processor_method(lambda text: "Выберите один из вариантов и нажмите.\n\n" + text)
             return transition_user_message
 
         prerequisite_actions = self.get_prerequisite_actions(scope, user)
@@ -120,7 +117,8 @@ class Stage:
                 user_input_action.apply(scope, user, input_string)
 
         try:
-            keyboard_buttons = list(itertools.chain(*self.get_message(scope, user).get_keyboard(scope, user).get_buttons(scope, user)))
+            keyboard_buttons = list(
+                itertools.chain(*self.get_message(scope, user).get_keyboard(scope, user).get_buttons(scope, user)))
             for keyboard_button in keyboard_buttons:
                 if input_string == keyboard_button.get_text(scope, user):
                     for action in keyboard_button.get_actions(scope, user):

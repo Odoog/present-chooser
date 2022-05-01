@@ -2,7 +2,7 @@ import logging
 from types import SimpleNamespace
 from typing import AnyStr
 
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update, InputMediaPhoto, ReplyKeyboardRemove
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update, InputMediaPhoto, ReplyKeyboardRemove, ParseMode
 from telegram.ext import MessageHandler, Filters, Updater, CallbackQueryHandler, CallbackContext
 from telegram.replykeyboardmarkup import ReplyKeyboardMarkup
 
@@ -118,21 +118,21 @@ class Bot:
                     message = context.bot.send_photo(chat_id=user_chat_id,
                                                      photo=open(transition_stage_message_picture.get_picture_source(),
                                                                 'rb'),
-                                                     caption=transition_stage_message_text.text,
-                                                     parse_mode=transition_stage_message_text.parse_mode,
+                                                     caption=transition_stage_message_text,
+                                                     parse_mode=ParseMode.HTML,
                                                      reply_markup=message_reply_markup)
 
             else:
                 message = context.bot.send_photo(chat_id=user_chat_id,
                                                  photo=open(transition_stage_message_picture.get_picture_source(),
                                                             'rb'),
-                                                 caption=transition_stage_message_text.text,
-                                                 parse_mode=transition_stage_message_text.parse_mode,
+                                                 caption=transition_stage_message_text,
+                                                 parse_mode=ParseMode.HTML,
                                                  reply_markup=message_reply_markup)
         else:
             message = context.bot.send_message(chat_id=user_chat_id,
-                                               text=transition_stage_message_text.text,
-                                               parse_mode=transition_stage_message_text.parse_mode,
+                                               text=transition_stage_message_text,
+                                               parse_mode=ParseMode.HTML,
                                                reply_markup=message_reply_markup)
         user.change_variable("_last_sent_message_id", message.message_id)
 
