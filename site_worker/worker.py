@@ -1,10 +1,10 @@
-import hashlib
 import logging
 import os
 import string
 import random
 
-from google_tables import SheetsClient
+from data_access_layer.google_tables import SheetsClient
+from data_access_layer.repository import Repository
 
 
 def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
@@ -13,13 +13,10 @@ def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
 
 class Worker:
 
-    def __init__(self, sheets_client: SheetsClient):
-        self.sheets_client = sheets_client
-
     def generate_goods_files(self):
         file = open("site_worker/good.html", "r")
         good_block_code_original = file.read()
-        for good in self.sheets_client.get_all_goods():
+        for good in Repository.get_all_goods():
 
             good_block_code = good_block_code_original
 
@@ -27,7 +24,7 @@ class Worker:
                 .replace("{src}", good.link)\
                 .replace("{image-path}", good.photo_link)\
                 .replace("{description}", good.name)\
-                .replace("{price}", good.price_actual)\
+                .replace("{price}", str(good.price_actual))\
                 .replace("{store}", good.shop)
             with open('site_worker/goods/{}.txt'.format(good.ind), 'w', encoding="utf-8") as f:
                 f.write(good_block_code)

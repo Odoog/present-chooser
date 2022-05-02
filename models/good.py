@@ -22,7 +22,6 @@ class Good:
                  receiver,
                  is_universal_reason,
                  reason,
-                 price_parsing,
                  rating):
         self.ind = ind
         self.name = name
@@ -31,17 +30,16 @@ class Good:
         self.price_actual = price_actual
         self.link = link
         self.photo_link = photo_link
-        self.is_local_brand = is_local_brand
-        self.is_universal = is_universal
+        self.is_local_brand = is_local_brand == 1
+        self.is_universal = is_universal == 1
         self.category = category
         self.price = price
         self.age = age.split(';')
         self.sex = sex.split(';')
         self.age2 = age2.split(';')
         self.receiver = receiver.split(';')
-        self.is_universal_reason = is_universal_reason
+        self.is_universal_reason = is_universal_reason == 1
         self.reason = reason.split(';')
-        self.price_parsing = price_parsing
         try:
             self.rating = int(rating)
         except ValueError:
