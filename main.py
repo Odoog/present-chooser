@@ -312,6 +312,7 @@ if __name__ == '__main__':
     ], main_stage_name="MainMenu")
 
     sheets = SheetsClient(os.environ['sheets_token'])
+    sheets.synchronize()
     worker = Worker(sheets)
     worker.generate_goods_files()
 
