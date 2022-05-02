@@ -79,23 +79,7 @@ class Bot:
         transition_stage_message_keyboard = transition_stage_message.get_keyboard(self._scope, user)
         transition_stage_message_picture = transition_stage_message.get_picture(self._scope, user)
 
-        if transition_stage_message_keyboard is None:
-            message_reply_markup = ReplyKeyboardRemove()  # Если клавиатуры нет, убираем существующую.
-        else:
-            keyboard_buttons = transition_stage_message_keyboard.get_buttons(self._scope, user)
-            keyboard_buttons_strings = [[button.get_text(self._scope, user) for button in keyboard_buttons_line] for
-                                        keyboard_buttons_line in keyboard_buttons]
-
-            if transition_stage_message_keyboard.is_inline_keyboard:
-                message_reply_markup = InlineKeyboardMarkup([list(
-                    map(lambda button: InlineKeyboardButton(button, callback_data=button),
-                        keyboard_buttons_string_line)) for keyboard_buttons_string_line in keyboard_buttons_strings],
-                    resize_keyboard=True,
-                    one_time_keyboard=True)
-            else:
-                message_reply_markup = ReplyKeyboardMarkup(keyboard_buttons_strings,
-                                                           resize_keyboard=True,
-                                                           one_time_keyboard=True)
+        message_reply_markup = self._get_reply_markup(transition_stage_message_keyboard, user)
 
         if transition_stage_message.should_delete_last_message(self._scope, user):
             try:
@@ -140,12 +124,37 @@ class Bot:
                                                text=transition_stage_message_text,
                                                parse_mode=transition_stage_message_text_parse_mode,
                                                reply_markup=message_reply_markup)
-        user.change_variable("_last_sent_message_id", message.message_id)
+        user.set_variable("_last_sent_message_id", message.message_id)
+
+        prerequisite_actions = self._scope.get_stage(user.get_current_stage_name()).get_prerequisite_actions(self._scope, user)
+        for prerequisite_action in prerequisite_actions:
+            prerequisite_action.apply(self._scope, user, message)
 
         # Если этап на котором оказался пользователь - проходная, то сразу обрабатываем его и переходим к следующему.
         if self._scope.get_stage(user.get_current_stage_name()).is_gatehouse():
             self.process_message(update,
                                  context)
+
+    def _get_reply_markup(self,
+                          transition_stage_message_keyboard,
+                          user):
+        if transition_stage_message_keyboard is None:
+            return ReplyKeyboardRemove()  # Если клавиатуры нет, убираем существующую.
+        else:
+            keyboard_buttons = transition_stage_message_keyboard.get_buttons(self._scope, user)
+            keyboard_buttons_strings = [[button.get_text(self._scope, user) for button in keyboard_buttons_line] for
+                                        keyboard_buttons_line in keyboard_buttons]
+
+            if transition_stage_message_keyboard.is_inline_keyboard:
+                return InlineKeyboardMarkup([list(map(lambda button: InlineKeyboardButton(button,
+                                                                                          callback_data=button),
+                                                      keyboard_buttons_string_line)) for keyboard_buttons_string_line in keyboard_buttons_strings],
+                                            resize_keyboard=True,
+                                            one_time_keyboard=True)
+            else:
+                return ReplyKeyboardMarkup(keyboard_buttons_strings,
+                                           resize_keyboard=True,
+                                           one_time_keyboard=True)
 
     def global_command_handler(self,
                                text: AnyStr,
@@ -155,5 +164,5 @@ class Bot:
             user.delete()
             return True
         if text == "/start":
-            user.change_stage("NewUser")  # Команда start принудительно обновляет этап юзера но продолжает исполнение, эмулируя удаление пользователя.
+            user.change_stage("NewUser")  # Команда start принудительно обновляет этап юзера, но продолжает исполнение, эмулируя удаление пользователя.
         return False

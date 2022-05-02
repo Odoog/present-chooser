@@ -34,7 +34,7 @@ class UserStats(Stats):
                          metric_value,
                          metric_function,
                          stat_object_getter_function=lambda scope, user, stage: user.try_get_variable("stats", {}),
-                         stat_object_setter_function=lambda scope, user, stage, value: user.change_variable("stats", value),
+                         stat_object_setter_function=lambda scope, user, stage, value: user.set_variable("stats", value),
                          value_getter_function=user_value_getter_function,
                          value_setter_function=user_value_setter_function)
 

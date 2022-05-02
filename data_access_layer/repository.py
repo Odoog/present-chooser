@@ -5,7 +5,7 @@ from data_access_layer.database import Database
 from models.good import Good
 
 
-class Repository:
+class Repository(Database):
 
     @staticmethod
     def get_all_goods():
@@ -24,39 +24,32 @@ class Repository:
 
     @staticmethod
     def clear_good_rating(scope, user):
-        user.change_variable("goods_rating", {})
-        user.change_variable("categories_rating", {})
+        user.set_variable("goods_rating", {})
+        user.set_variable("categories_rating", {})
 
     @staticmethod
-    def change_good_rating(scope, user, ind, iter_value):
-        if (goods_rating := user.get_variable("goods_rating")) is None:
-            user.change_variable("goods_rating", {})
-            goods_rating = {}
+    def change_good_rating(scope,
+                           user,
+                           ind,
+                           iter_value):
 
-        if ind in goods_rating:
-            goods_rating[ind] += iter_value
-        else:
-            goods_rating[ind] = iter_value
+        # Смена рейтинга товара для конкретного пользователя.
 
-        user.change_variable("goods_rating", goods_rating)
+        user.change_variable("goods_rating",
+                             lambda rating: rating | {ind: rating.get(ind, 0) + iter_value},
+                             {})
 
-        logging.info("change_good_rating | Меняю рейтинг категории у товара " + Repository.get_good_by_id(
-            ind).name + " с категорией " + Repository.get_good_by_id(ind).category)
+        logging.info("change_good_rating | Меняю рейтинг категории у товара " + Repository.get_good_by_id(ind).name + " с категорией " + Repository.get_good_by_id(ind).category)
 
         category = Repository.get_good_by_id(ind).category
 
-        if (categories_rating := user.get_variable("categories_rating")) is None:
-            user.change_variable("categories_rating", {})
-            categories_rating = {}
+        user.change_variable("categories_rating",
+                             lambda rating: rating | {category: rating.get(category, 0) + iter_value},
+                             {})
 
-        if category in categories_rating:
-            categories_rating[category] += iter_value
-        else:
-            categories_rating[category] = iter_value
+        # Смена рейтинга товара в таблице.
 
-        logging.info("change_good_rating | Новый рейтинг этой категории стал: {}".format(str(categories_rating[category])))
-
-        user.change_variable("categories_rating", categories_rating)
+        Database._run("update goods set rating = rating + ? where id = ?", (iter_value, ind))
 
     @staticmethod
     def get_good_category_rating(scope, user, ind):
@@ -64,7 +57,7 @@ class Repository:
         category = Repository.get_good_by_id(ind).category
 
         if (categories_rating := user.get_variable("categories_rating")) is None:
-            user.change_variable("categories_rating", {})
+            user.set_variable("categories_rating", {})
             categories_rating = {}
 
         if category in categories_rating:

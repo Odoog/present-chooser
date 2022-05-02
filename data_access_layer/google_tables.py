@@ -51,4 +51,4 @@ class SheetsClient:
                            row[13],
                            row[14] == "TRUE",
                            row[15],
-                           int(row[17])])
+                           int(row[17] if row[17] != '' else 0)])

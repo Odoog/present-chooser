@@ -1,4 +1,6 @@
-from typing import List, AnyStr, Dict, Any, Optional
+from __future__ import annotations
+
+from typing import List, AnyStr, Dict, Any, Optional, Callable
 from data_access_layer.database import Database
 from statistics_entities.stats import Stats
 
@@ -35,10 +37,17 @@ class User:
         self._stage_history.append(stage_name)
         Database.change_user_column(self.chat_id, 'stage_history', self._stage_history)
 
+    def set_variable(self,
+                     variable_name: AnyStr,
+                     variable_value: Any | Callable[[Any], Any]):
+        self._user_variables[variable_name] = variable_value
+        Database.change_user_column(self.chat_id, 'user_variables', self._user_variables)
+
     def change_variable(self,
                         variable_name: AnyStr,
-                        variable_value: AnyStr):
-        self._user_variables[variable_name] = variable_value
+                        change_method: Callable[[Any], Any],
+                        default_value: Any):
+        self._user_variables[variable_name] = change_method(self.try_get_variable(variable_name, default_value))
         Database.change_user_column(self.chat_id, 'user_variables', self._user_variables)
 
     def try_get_variable(self,
@@ -46,7 +55,7 @@ class User:
                          default_value: Any):
         value = self.get_variable(variable_name)
         if value is None:
-            self.change_variable(variable_name, default_value)
+            self.set_variable(variable_name, default_value)
             return default_value
         return value
 

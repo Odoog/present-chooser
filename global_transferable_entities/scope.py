@@ -24,9 +24,9 @@ class Scope:
         scope_from_db = Database.get_scope()
         self._global_variables = scope_from_db['global_variables']
 
-    def change_variable(self,
-                        variable_name: AnyStr,
-                        variable_value: AnyStr):
+    def set_variable(self,
+                     variable_name: AnyStr,
+                     variable_value: AnyStr):
         self._global_variables[variable_name] = variable_value
         Database.change_scope_column('global_variables', self._global_variables)
 

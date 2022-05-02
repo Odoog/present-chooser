@@ -40,7 +40,7 @@ class StageStats(Stats):
                          metric_value,
                          metric_function,
                          stat_object_getter_function=lambda scope, user, stage: scope.try_get_variable("stats", {}),
-                         stat_object_setter_function=lambda scope, user, stage, value: scope.change_variable("stats", value),
+                         stat_object_setter_function=lambda scope, user, stage, value: scope.set_variable("stats", value),
                          value_getter_function=stage_value_getter_function,
                          value_setter_function=stage_value_setter_function)
 

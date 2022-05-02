@@ -5,7 +5,7 @@ from typing import List, AnyStr, Optional, Callable
 
 from global_transferable_entities.scope import Scope
 from global_transferable_entities.user import User
-from state_constructor_parts.action import Action
+from state_constructor_parts.action import Action, PrerequisiteAction
 from state_constructor_parts.filter import InputFilter
 from message_parts.message import Message
 from statistics_entities.stats import Stats
@@ -22,7 +22,7 @@ class Stage:
     def __init__(self,
                  name: AnyStr,
                  message: Optional[Message | Callable[..., Message]] = None,
-                 prerequisite_actions: Optional[List[Action] | Callable[..., List[Action]]] = None,
+                 prerequisite_actions: Optional[List[PrerequisiteAction] | Callable[..., List[PrerequisiteAction]]] = None,
                  user_input_actions: Optional[List[Action] | Callable[..., List[Action]]] = None,
                  user_input_filter: Optional[InputFilter | Callable[..., InputFilter]] = None,
                  statistics: Optional[List[Stats]] = None,
@@ -105,10 +105,6 @@ class Stage:
             transition_user_message = transition_user_stage.get_message(scope, user)
             transition_user_message.set_onetime_text_processor_method(lambda text: "Выберите один из вариантов и нажмите.\n\n" + text)
             return transition_user_message
-
-        prerequisite_actions = self.get_prerequisite_actions(scope, user)
-        for prerequisite_action in prerequisite_actions:
-            prerequisite_action.apply(scope, user, input_string)
 
         if user_input_actions := self.get_user_input_actions(scope, user):
             for user_input_action in user_input_actions:

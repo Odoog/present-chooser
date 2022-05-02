@@ -7,7 +7,8 @@ from telegram import ParseMode
 from data_access_layer.repository import Repository
 from global_transferable_entities.user import User
 from site_worker.worker import Worker
-from state_constructor_parts.action import ActionChangeUserVariable, ActionChangeUserVariableToInput, ActionChangeStage, Action
+from state_constructor_parts.action import ActionChangeUserVariable, ActionChangeUserVariableToInput, ActionChangeStage, \
+    Action, PrerequisiteAction
 from bot import Bot
 from message_parts.message import Message, MessageKeyboard, MessageKeyboardButton, MessagePicture
 from global_transferable_entities.scope import Scope
@@ -60,7 +61,7 @@ if __name__ == '__main__':
         goods = goods[:good_id] + sorted(goods[good_id:],
                                          key=lambda good: (-Repository.get_good_category_rating(scope, user, good.ind), random.random()))
         # logging.info("goods are: " + ",".join([str(good.ind) + " " + good.category + " " + str(Repository.get_good_category_rating(scope, user, good.ind)) + "\n" for good in goods]))
-        user.change_variable("show_list", [good.ind for good in goods])
+        user.set_variable("show_list", [good.ind for good in goods])
 
 
     def generate_text_for_current_good(_, user):
@@ -245,6 +246,7 @@ if __name__ == '__main__':
 
         Stage(name="ShowingGoodPre",
               message=Message(text="Выбирайте 😇"),
+              prerequisite_actions=[PrerequisiteAction(lambda scope, user, sent_message: user.set_variable("message_to_delete_after_id", sent_message.message_id))],
               user_input_actions=[ActionChangeStage("ShowingGood")],
               is_gatehouse=True),
 
@@ -290,7 +292,7 @@ if __name__ == '__main__':
                           worker.build_site(user.get_variable("fav_list"))
                           if len(user.get_variable("fav_list")) > 0
                           else "Жаль, что мы ничего не смогли для вас подобрать 😔"),
-                  text_parse_mode=ParseMode.MARKDOWN_V2,
+                  text_parse_mode=ParseMode.MARKDOWN,
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(text="Выбрать еще один подарок",
@@ -306,7 +308,7 @@ if __name__ == '__main__':
                           worker.build_site(user.get_variable("fav_list")))
                       if len(user.get_variable("fav_list")) > 0
                       else "Жаль, что мы ничего не смогли для вас подобрать 😔",
-                  text_parse_mode=ParseMode.MARKDOWN_V2,
+                  text_parse_mode=ParseMode.MARKDOWN,
                   keyboard=MessageKeyboard(
                       buttons=[
                           MessageKeyboardButton(text="Выбрать еще один подарок",
