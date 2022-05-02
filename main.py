@@ -102,7 +102,7 @@ if __name__ == '__main__':
                       ],
                       is_non_keyboard_input_allowed=False)),
               user_input_actions=[ActionChangeStage("AskingForSex"),
-                                  Action(lambda scope, user, input_text: Repository.clear_good_rating(scope, user))],  # Обнуляем рейтинг подарков для пользователя.
+                                  Action(lambda scope, user, _, __: Repository.clear_good_rating(scope, user))],  # Обнуляем рейтинг подарков для пользователя.
               statistics=[UserStatsCyclesStartCount()]),
 
         Stage(name="AskingForSex",
@@ -246,7 +246,8 @@ if __name__ == '__main__':
 
         Stage(name="ShowingGoodPre",
               message=Message(text="Выбирайте 😇"),
-              prerequisite_actions=[PrerequisiteAction(lambda scope, user, sent_message: user.set_variable("message_to_delete_after_id", sent_message.message_id))],
+              prerequisite_actions=[PrerequisiteAction(lambda scope, user, sent_message, _: user.set_variable("message_to_delete_after_id",
+                                                                                                              sent_message.message_id))],
               user_input_actions=[ActionChangeStage("ShowingGood")],
               is_gatehouse=True),
 
@@ -263,7 +264,9 @@ if __name__ == '__main__':
                           MessageKeyboardButton(text="Не подходит"),
                           MessageKeyboardButton(
                               text="Стоп",
-                              actions=[ActionChangeStage("ShowingFinish")])
+                              actions=[ActionChangeStage("ShowingFinish"),
+                                       Action(lambda scope, user, _, bot: bot.delete_message(chat_id=user.chat_id,
+                                                                                             message_id=user.get_variable("message_to_delete_after_id")))])
                       ],
                       is_inline_keyboard=True,
                       buttons_layout=[2, 1],
@@ -271,16 +274,20 @@ if __name__ == '__main__':
                   should_replace_last_message=True),
               user_input_actions=lambda scope, user:{
                          True: [
-                             Action(lambda scope, user, input: Repository.change_good_rating(scope, user, user.get_variable("showing_id"), 1 if input == "Нравится" else -1)),
-                             ActionChangeUserVariable("good_id",
-                                                      lambda scope, user: user.get_variable("good_id") + 1),
-                             Action(lambda scope, user, text: sort_goods(scope, user)),
+                             Action(lambda scope, user, input, _: Repository.change_good_rating(scope,
+                                                                                                user,
+                                                                                                user.get_variable("showing_id"),
+                                                                                                1 if input == "Нравится" else -1)),
+                             ActionChangeUserVariable("good_id",lambda scope, user: user.get_variable("good_id") + 1),
+                             Action(lambda scope, user, _, __: sort_goods(scope, user)),
                              # Сортируем оствашиеся для показа товары по рейтингу
                              ActionChangeUserVariable("showing_id",
                                                       lambda _, user: user.get_variable("show_list")[user.get_variable("good_id")])
                          ],
                          False: [
-                             ActionChangeStage("ShowingLimit")
+                             ActionChangeStage("ShowingLimit"),
+                             Action(lambda scope, user, _, bot: bot.delete_message(chat_id=user.chat_id,
+                                                                                   message_id=user.get_variable("message_to_delete_after_id")))
                          ]
                      }.get(user.get_variable("good_id") + 1 < len(user.get_variable("show_list")))),
 

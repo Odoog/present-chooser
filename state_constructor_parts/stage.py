@@ -3,6 +3,8 @@ from __future__ import annotations
 import itertools
 from typing import List, AnyStr, Optional, Callable
 
+from telegram import Bot
+
 from global_transferable_entities.scope import Scope
 from global_transferable_entities.user import User
 from state_constructor_parts.action import Action, PrerequisiteAction
@@ -98,7 +100,8 @@ class Stage:
     def process_input(self,
                       input_string: AnyStr,
                       scope: Scope,
-                      user: User) -> Message:
+                      user: User,
+                      telegram_bot: Bot) -> Message:
 
         if not self.is_allowed_input(input_string, scope, user):
             transition_user_stage = scope.get_stage(user.get_current_stage_name())
@@ -108,16 +111,15 @@ class Stage:
 
         if user_input_actions := self.get_user_input_actions(scope, user):
             for user_input_action in user_input_actions:
-                user_input_action.apply(scope, user, input_string)
+                user_input_action.apply(scope, user, input_string, telegram_bot)
 
         try:
-            keyboard_buttons = list(
-                itertools.chain(*self.get_message(scope, user).get_keyboard(scope, user).get_buttons(scope, user)))
+            keyboard_buttons = list(itertools.chain(*self.get_message(scope, user).get_keyboard(scope, user).get_buttons(scope, user)))
             for keyboard_button in keyboard_buttons:
                 if input_string == keyboard_button.get_text(scope, user):
                     for action in keyboard_button.get_actions(scope, user):
                         if action is not None:
-                            action.apply(scope, user, input_string)
+                            action.apply(scope, user, input_string, telegram_bot)
         except AttributeError:
             pass
 

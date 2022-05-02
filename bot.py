@@ -73,7 +73,7 @@ class Bot:
 
         # Reply message
 
-        transition_stage_message = current_user_stage.process_input(update_text, self._scope, user)
+        transition_stage_message = current_user_stage.process_input(update_text, self._scope, user, context.bot)
         transition_stage_message_text = transition_stage_message.get_text(self._scope, user)
         transition_stage_message_text_parse_mode = transition_stage_message.get_text_parse_mode(self._scope, user)
         transition_stage_message_keyboard = transition_stage_message.get_keyboard(self._scope, user)
