@@ -221,7 +221,7 @@ if __name__ == '__main__':
         Stage(name="ReadyToShow",
               message=Message(
                   text=lambda scope, user:
-                      "Отлично! У меня для вас много интересных варинтов — выбирайте :) \n\nЗапоминать "
+                      "Отлично! У меня для вас много интересных вариантов — выбирайте :) \n\nЗапоминать "
                       "ничего не нужно — когда вы нажмете \"Стоп\", я покажу вам все подарки, который вам"
                       " понравились."
                       if len(get_all_relevant_goods(scope, user)) > 0 else
@@ -265,6 +265,7 @@ if __name__ == '__main__':
                           MessageKeyboardButton(
                               text="Стоп",
                               actions=[ActionChangeStage("ShowingFinish"),
+                                       ActionChangeUserVariable("showing_limit_exceed", False),
                                        Action(lambda scope, user, _, bot: bot.delete_message(chat_id=user.chat_id,
                                                                                              message_id=user.get_variable("message_to_delete_after_id")))])
                       ],
@@ -278,39 +279,24 @@ if __name__ == '__main__':
                                                                                                 user,
                                                                                                 user.get_variable("showing_id"),
                                                                                                 1 if input == "Нравится" else -1)),
-                             ActionChangeUserVariable("good_id",lambda scope, user: user.get_variable("good_id") + 1),
+                             ActionChangeUserVariable("good_id", lambda scope, user: user.get_variable("good_id") + 1),
                              Action(lambda scope, user, _, __: sort_goods(scope, user)),
-                             # Сортируем оствашиеся для показа товары по рейтингу
+                             # Сортируем оставшиеся для показа товары по рейтингу
                              ActionChangeUserVariable("showing_id",
                                                       lambda _, user: user.get_variable("show_list")[user.get_variable("good_id")])
                          ],
                          False: [
-                             ActionChangeStage("ShowingLimit"),
+                             ActionChangeStage("ShowingFinish"),
+                             ActionChangeUserVariable("showing_limit_exceed", True),
                              Action(lambda scope, user, _, bot: bot.delete_message(chat_id=user.chat_id,
                                                                                    message_id=user.get_variable("message_to_delete_after_id")))
                          ]
                      }.get(user.get_variable("good_id") + 1 < len(user.get_variable("show_list")))),
 
-        Stage(name="ShowingLimit",
-              message=Message(
-                  text=lambda scope, user:
-                      "Я показал всё, что смог подобрать для вас :)" +
-                      "Все подарки, которые вам понравились, собраны [здесь]({}) :) Хорошего дня!".format(
-                          worker.build_site(user.get_variable("fav_list"))
-                          if len(user.get_variable("fav_list")) > 0
-                          else "Жаль, что мы ничего не смогли для вас подобрать 😔"),
-                  text_parse_mode=ParseMode.MARKDOWN,
-                  keyboard=MessageKeyboard(
-                      buttons=[
-                          MessageKeyboardButton(text="Выбрать еще один подарок",
-                                                actions=[ActionChangeStage("Opening")])
-                      ],
-                      is_non_keyboard_input_allowed=False),
-                  should_delete_last_message=True)),
-
         Stage(name="ShowingFinish",
               message=Message(
                   text=lambda scope, user:
+                      ("Я показал всё, что смог подобрать для вас:)\n" if user.get_variable("showing_limit_exceed") else "") +
                       "Все подарки, которые вам понравились, собраны [здесь]({}) :) Хорошего дня!".format(
                           worker.build_site(user.get_variable("fav_list")))
                       if len(user.get_variable("fav_list")) > 0

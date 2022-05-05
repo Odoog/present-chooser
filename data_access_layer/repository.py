@@ -19,8 +19,8 @@ class Repository(Database):
     @staticmethod
     def get_good_by_id(ind) -> Good:
         goods = Repository.get_all_goods()
-        # logging.info("get_good_by_id | Получаю товар по id = {} получил = {}".format(ind, goods[ind - 1].name))
-        return goods[ind - 1]
+        logging.info("get_good_by_id | Получаю товар по id = {} получил = {}".format(ind, goods[ind - 1].name))
+        return next(good for good in goods if good.ind == ind)
 
     @staticmethod
     def clear_good_rating(scope, user):
