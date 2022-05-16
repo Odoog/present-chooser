@@ -44,8 +44,7 @@ if __name__ == '__main__':
         if user.get_variable("age") == "взрослому":
             all_goods = list(filter(lambda good: user.get_variable("receiver") in good.receiver or good.is_universal, all_goods))
             logging.info("get_all_relevant_goods | Сортировка по получателю для возрослого : " + " ".join([str(good.ind) for good in all_goods]))
-        all_goods = list(filter(lambda good: user.get_variable("reason") in good.reason or good.is_universal_reason
-                                             and (user.get_variable("reason") == "Другой повод" or user.get_variable("reason") is None),
+        all_goods = list(filter(lambda good: user.get_variable("reason") in good.reason or good.is_universal_reason and (user.get_variable("reason") == "Другой повод" or user.get_variable("reason") is None),
                                 all_goods))
         logging.info("get_all_relevant_goods | Сортировка по поводу : " + " ".join([str(good.ind) for good in all_goods]))
         all_goods = sorted(all_goods, key=lambda good: (-Repository.get_good_category_rating(scope, user, good.ind), random.random()))
@@ -203,15 +202,16 @@ if __name__ == '__main__':
               message=Message(
                   text="Выберите повод для подарка?",
                   keyboard=MessageKeyboard(
-                      buttons=[
-                          MessageKeyboardButton(text="8 Марта"),
-                          MessageKeyboardButton(text="День рождения"),
-                          MessageKeyboardButton(text="23 Февраля"),
-                          MessageKeyboardButton(text="14 Февраля"),
-                          MessageKeyboardButton(text="Новый год"),
-                          MessageKeyboardButton(text="Свадьба, годовщина"),
-                          MessageKeyboardButton(text="Рождение ребенка"),
-                          MessageKeyboardButton(text="Другой повод"),
+                      buttons=lambda scope, user: [
+                          MessageKeyboardButton(text=txt) for txt in ["8 Марта",
+                                                                      "День рождения",
+                                                                      "23 Февраля",
+                                                                      "14 Февраля",
+                                                                      "Новый год",
+                                                                      "Свадьба, годовщина",
+                                                                      "Рождение ребенка",
+                                                                      "Другой повод"]
+                          if not (user.get_variable("sex") == "мальчику" and txt in ["8 Марта"]) and not (user.get_variable("sex") == "девочке" and txt in ["23 Февраля"])
                       ],
                       buttons_layout=[2, 2, 2, 2],
                       is_non_keyboard_input_allowed=False)),

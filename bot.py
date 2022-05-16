@@ -1,4 +1,5 @@
 import logging
+import os
 from types import SimpleNamespace
 from typing import AnyStr
 
@@ -7,6 +8,7 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update, InputMe
 from telegram.ext import MessageHandler, Filters, Updater, CallbackQueryHandler, CallbackContext
 from telegram.replykeyboardmarkup import ReplyKeyboardMarkup
 
+from data_access_layer.google_tables import SheetsClient
 from global_transferable_entities.scope import Scope
 from global_transferable_entities.user import User
 
@@ -59,7 +61,8 @@ class Bot:
 
         # Global command handler
 
-        if self.global_command_handler(update_text, self._scope, user):
+        if self.global_command_handler(context, update_text, self._scope, user):
+
             return
 
         # Get current stage
@@ -157,6 +160,7 @@ class Bot:
                                            one_time_keyboard=True)
 
     def global_command_handler(self,
+                               context: CallbackContext,
                                text: AnyStr,
                                scope: Scope,
                                user: User):
@@ -165,4 +169,13 @@ class Bot:
             return True
         if text == "/start":
             user.change_stage("NewUser")  # Команда start принудительно обновляет этап юзера, но продолжает исполнение, эмулируя удаление пользователя.
+        if text == "info":
+            context.bot.send_message(chat_id=user.chat_id,
+                                     text="Ваш chat_id : {}".format(user.chat_id))
+            return True
+        if text == "synchronize":
+            SheetsClient(os.environ['sheets_token']).synchronize()
+            context.bot.send_message(chat_id=user.chat_id,
+                                     text="Таблица была успешно синхронизирована с google tables")
+            return True
         return False

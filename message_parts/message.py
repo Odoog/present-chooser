@@ -52,10 +52,7 @@ class MessageKeyboardButton:
 class MessageKeyboard:
 
     def __init__(self,
-                 buttons: List[MessageKeyboardButton]
-                          | List[Callable[..., MessageKeyboardButton]]
-                          | Callable[..., List[MessageKeyboardButton]]
-                          | Callable[..., List[Callable[..., MessageKeyboardButton]]],
+                 buttons: List[MessageKeyboardButton | Callable[..., MessageKeyboardButton]] | Callable[..., List[MessageKeyboardButton | Callable[..., MessageKeyboardButton]]],
                  buttons_layout: Optional[List[int]] = None,
                  is_non_keyboard_input_allowed: bool = False,
                  is_inline_keyboard: bool = False):
