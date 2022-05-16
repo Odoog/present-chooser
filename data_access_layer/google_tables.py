@@ -8,6 +8,27 @@ from models.good import Good
 import pygsheets
 
 
+class LocalBrandSheetClient:
+
+    def __init__(self, table_key):
+        self.client = pygsheets.authorize(service_file='data_access_layer/account_credentials.json')
+        self.sheet = self.client.open_by_key(table_key)
+        self.db_sheet = self.sheet.worksheet_by_title('Список')
+
+    def synchronize(self):
+        values = self.db_sheet.get_all_values(returnas='matrix')
+        Database._run("delete from local_brands where 1")
+        for key, row in enumerate(values[1:]):
+            if row[0] == "" or row[0] is None:
+                break
+            Database._run("insert into local_brands (id, nickname, phone, good_link, category) values (?, ?, ?, ?, ?)",
+                          [key,
+                           row[0].split("/")[-1],
+                           row[1],
+                           row[2],
+                           row[3]])
+
+
 class SheetsClient:
 
     def __init__(self, table_key):
@@ -15,14 +36,6 @@ class SheetsClient:
         self.sheet = self.client.open_by_key(table_key)
         self.db_sheet = self.sheet.worksheet_by_title('База товаров')
         self.attributes_sheet = self.sheet.worksheet_by_title('Атрибуты')
-        self.goods = []
-        self.last_time_update = datetime.min
-        self.last_time_update_cat = datetime.min
-        self.goods_table_changes = []
-        self.goods_table_changes_count = 0
-        self.goods_category_rating = {}
-        self.goods_category_rating_changes = {}
-        self.goods_category_rating_changes_count = 0
 
     def synchronize(self):
         values = self.db_sheet.get_all_values(returnas='matrix')

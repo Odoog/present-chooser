@@ -13,7 +13,7 @@ from bot import Bot
 from message_parts.message import Message, MessageKeyboard, MessageKeyboardButton, MessagePicture
 from global_transferable_entities.scope import Scope
 from state_constructor_parts.stage import Stage
-from data_access_layer.google_tables import SheetsClient
+from data_access_layer.google_tables import SheetsClient, LocalBrandSheetClient
 from statistics_entities.custom_stats import UserStatsCyclesFinishCount, UserStatsCyclesStartCount
 from statistics_entities.stage_stats import StageStatsVisitCount
 from statistics_entities.user_stats import UserStatsVisitCount, UserStatsCurrentStage
@@ -314,6 +314,8 @@ if __name__ == '__main__':
     ], main_stage_name="MainMenu")
 
     SheetsClient(os.environ['sheets_token']).synchronize()
+    LocalBrandSheetClient(os.environ['local_brand_sheet_token']).synchronize()
+
     worker = Worker()
     worker.generate_goods_files()
 

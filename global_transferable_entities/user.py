@@ -15,11 +15,12 @@ class User:
         User._common_statistics = statistics
 
     def __init__(self,
-                 chat_id: AnyStr):
+                 chat_id: AnyStr,
+                 nickname: AnyStr):
         self.chat_id = chat_id
 
         if not Database.is_user_exist(chat_id):
-            Database.add_user(chat_id, ['NewUser'], {})
+            Database.add_user(chat_id, ['NewUser'], {"_nickname": nickname})
 
         self.update_info()
 

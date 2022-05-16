@@ -13,6 +13,10 @@ class Repository(Database):
         return [Good(*good) for good in goods_from_database]
 
     @staticmethod
+    def get_all_localbrands_owners_nicknames():
+        return Database._run("select nickname from local_brands")
+
+    @staticmethod
     def get_goods(ids) -> List[Good]:
         return [Repository.get_good_by_id(id) for id in ids]
 

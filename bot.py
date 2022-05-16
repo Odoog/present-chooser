@@ -9,6 +9,7 @@ from telegram.ext import MessageHandler, Filters, Updater, CallbackQueryHandler,
 from telegram.replykeyboardmarkup import ReplyKeyboardMarkup
 
 from data_access_layer.google_tables import SheetsClient
+from data_access_layer.repository import Repository
 from global_transferable_entities.scope import Scope
 from global_transferable_entities.user import User
 
@@ -57,7 +58,7 @@ class Bot:
 
         logging.info("Get the message with text : {}".format(update_text))
 
-        user = User(user_chat_id)
+        user = User(user_chat_id, update.message.chat.username)
 
         # Global command handler
 
@@ -71,8 +72,12 @@ class Bot:
 
         # Statistics
 
-        current_user_stage.count_statistics(update_text, self._scope, user, current_user_stage)
-        user.count_statistics(update_text, self._scope, user, current_user_stage)
+        # Костыль чтобы не собирать статистику для группы пользователей, подавших заявку на регистрацию
+        # локального бренда. При выпиливании всего для публикации чистого конструктора, поменять принцип работы
+        # или вообще убрать.
+        if user.get_variable("nickname" not in Repository.get_all_localbrands_owners_nicknames()):
+            current_user_stage.count_statistics(update_text, self._scope, user, current_user_stage)
+            user.count_statistics(update_text, self._scope, user, current_user_stage)
 
         # Reply message
 
