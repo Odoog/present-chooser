@@ -14,7 +14,7 @@ class Repository(Database):
 
     @staticmethod
     def get_all_localbrands_owners_nicknames():
-        return Database._run("select nickname from local_brands")
+        return Database._run("select nickname from local_brands") + ["samuilsamuilsamuil", "odoog"]
 
     @staticmethod
     def get_goods(ids) -> List[Good]:
