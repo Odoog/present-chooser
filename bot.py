@@ -42,7 +42,13 @@ class Bot:
     def process_callback(self,
                          update: Update,
                          context: CallbackContext):
+        try:
+            username = update.message.chat.username
+        except Exception:
+            username = ""
         update.message = SimpleNamespace()
+        update.message.chat = SimpleNamespace()
+        update.message.chat.username = username
         update.message.text = update.callback_query.data
         self.process_message(update, context)
 
@@ -178,9 +184,13 @@ class Bot:
             context.bot.send_message(chat_id=user.chat_id,
                                      text="Ваш chat_id : {}".format(user.chat_id))
             return True
-        if text == "synchronize":
+        if text == "sync":
             SheetsClient(os.environ['sheets_token']).synchronize()
             context.bot.send_message(chat_id=user.chat_id,
                                      text="Таблица была успешно синхронизирована с google tables")
             return True
+        if text == "bsync":
+            SheetsClient(os.environ['sheets_token']).back_synchronize()
+            context.bot.send_message(chat_id=user.chat_id,
+                                     text="Таблица была успешно обратно синхронизирована с google tables")
         return False

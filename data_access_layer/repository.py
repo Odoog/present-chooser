@@ -54,6 +54,7 @@ class Repository(Database):
         # Смена рейтинга товара в таблице.
 
         Database._run("update goods set rating = rating + ? where id = ?", (iter_value, ind))
+        Database._run("update categories set rating = rating + ? where name = ?", (iter_value, Repository.get_good_by_id(ind).category))
 
     @staticmethod
     def get_good_category_rating(scope, user, ind):

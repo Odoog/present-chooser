@@ -37,6 +37,10 @@ class SheetsClient:
         self.db_sheet = self.sheet.worksheet_by_title('База товаров')
         self.attributes_sheet = self.sheet.worksheet_by_title('Атрибуты')
 
+    def back_synchronize(self):
+        self.attributes_sheet.update_row(21, [row["rating"] for row in Database._run("select rating from categories")], 1)
+        self.attributes_sheet.update_row(19, [row["name"] for row in Database._run("select name from categories")], 1)
+
     def synchronize(self):
         values = self.db_sheet.get_all_values(returnas='matrix')
         Database._run("delete from goods where 1")
@@ -65,3 +69,6 @@ class SheetsClient:
                            row[14] == "TRUE",
                            row[15],
                            int(row[17] if row[17] != '' else 0)])
+
+            if len(Database._run("select * from categories where name = ?", (row[8],))) == 0:
+                Database._run("insert into categories(name, rating) values (?, 0)", (row[8],))
