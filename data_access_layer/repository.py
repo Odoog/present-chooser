@@ -56,6 +56,22 @@ class Repository(Database):
         Database._run("update goods set rating = rating + ? where id = ?", (iter_value, ind))
         Database._run("update categories set rating = rating + ? where name = ?", (iter_value, Repository.get_good_by_id(ind).category))
 
+        # Смена рейтинга в разрезе фильтров.
+
+        param_array = [user.get_variable("age") or "",
+                       user.get_variable("sex") or "",
+                       user.get_variable("age2") or "",
+                       user.get_variable("spend") or "",
+                       user.get_variable("reason") or ""]
+
+        if len(Database._run("select * from filters_rating where age = ? and sex = ? and age2 = ? and spend = ? and reason = ?", param_array)) == 0:
+            Database._run("insert into filters_rating(age, sex, age2, spend, reason) values (?, ?, ?, ?, ?)", param_array)
+
+        Database._run("update filters_rating set {} = {} + ? where age = ? and sex = ? and age2 = ? and spend = ? and reason = ?"
+                      .format("likes_count" if iter_value > 0 else "dislikes_count",
+                              "likes_count" if iter_value > 0 else "dislikes_count"),
+                      [iter_value] + param_array)
+
     @staticmethod
     def get_good_category_rating(scope, user, ind):
 

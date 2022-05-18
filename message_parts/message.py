@@ -100,7 +100,7 @@ class Message:
                  scope: 'Scope',
                  user: 'User') -> Optional[AnyStr]:
         text_processor_method = self._get_text_processor_method(scope, user)
-        self._text_processor_method = lambda text: text  # TextProcessorMethod одноразовый, поэтому возвращаем после единичного использования.
+        self.set_onetime_text_processor_method(lambda text: text)  # TextProcessorMethod одноразовый, поэтому возвращаем после единичного использования.
         return text_processor_method(self._text.get(scope, user))
 
     def get_text_parse_mode(self,
